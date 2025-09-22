@@ -3,6 +3,7 @@
 import type React from "react"
 import { useState, useRef, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
+import { useTheme } from "next-themes"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -24,6 +25,7 @@ interface ChatSession {
 }
 
 export default function SyllabusChat() {
+  const { theme, setTheme } = useTheme()
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -35,9 +37,7 @@ export default function SyllabusChat() {
 
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([])
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null)
-  const [settings, setSettings] = useState({
-    theme: "auto" as "light" | "dark" | "auto",
-  })
+  const [selectedModel, setSelectedModel] = useState("gpt-4")
 
   const [logoOrbActive, setLogoOrbActive] = useState(false)
   const logoOrbControls = useAnimation()
@@ -50,25 +50,7 @@ export default function SyllabusChat() {
   useEffect(() => {
     generateContextualGreeting()
     loadChatSessions()
-    applyTheme(settings.theme)
   }, [])
-
-  const applyTheme = (theme: "light" | "dark" | "auto") => {
-    const root = document.documentElement
-    if (theme === "light") {
-      root.classList.remove("dark")
-    } else if (theme === "dark") {
-      root.classList.add("dark")
-    } else {
-      // Auto theme - use system preference
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
-      if (prefersDark) {
-        root.classList.add("dark")
-      } else {
-        root.classList.remove("dark")
-      }
-    }
-  }
 
   const loadChatSessions = () => {
     try {
@@ -83,13 +65,6 @@ export default function SyllabusChat() {
           lastActivity: new Date(session.lastActivity),
         }))
         setChatSessions(sessions)
-      }
-
-      const savedSettings = localStorage.getItem("syllabus-chat-settings")
-      if (savedSettings) {
-        const loadedSettings = JSON.parse(savedSettings)
-        setSettings(loadedSettings)
-        applyTheme(loadedSettings.theme)
       }
     } catch (error) {
       console.error("Failed to load chat sessions:", error)
@@ -118,19 +93,28 @@ export default function SyllabusChat() {
   }
 
   const generateContextualGreeting = async () => {
-    const greetings = [
-      "What are you working on?",
-      "How can I help you today?",
-      "What would you like to explore?",
-      "Ready to dive into something new?",
-      "What's on your mind?",
-      "How can I assist with your studies?",
-      "What topic interests you today?",
-      "Ready to learn something exciting?",
-    ]
-
-    const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)]
-    setContextualGreeting(randomGreeting)
+    try {
+      const response = await fetch('/api/generate-greeting', {
+        method: 'POST',
+      });
+      const data = await response.json();
+      setContextualGreeting(data.greeting);
+    } catch (error) {
+      console.error('Error fetching greeting:', error);
+      // Fallback to local greetings
+      const greetings = [
+        "What are you working on?",
+        "How can I help you today?",
+        "What would you like to explore?",
+        "Ready to dive into something new?",
+        "What's on your mind?",
+        "How can I assist with your studies?",
+        "What topic interests you today?",
+        "Ready to learn something exciting?",
+      ];
+      const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
+      setContextualGreeting(randomGreeting);
+    }
   }
 
   const handleInputChange = useCallback(
@@ -273,15 +257,7 @@ export default function SyllabusChat() {
     }
   }
 
-  const updateSettings = (newSettings: Partial<typeof settings>) => {
-    const updated = { ...settings, ...newSettings }
-    setSettings(updated)
-    localStorage.setItem("syllabus-chat-settings", JSON.stringify(updated))
 
-    if (newSettings.theme) {
-      applyTheme(newSettings.theme)
-    }
-  }
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -301,7 +277,6 @@ export default function SyllabusChat() {
       y: 0,
       transition: {
         duration: 0.5,
-        ease: "easeOut",
       },
     },
   }
@@ -313,7 +288,6 @@ export default function SyllabusChat() {
       x: 0,
       transition: {
         duration: 0.3,
-        ease: "easeOut",
       },
     },
   }
@@ -488,6 +462,31 @@ export default function SyllabusChat() {
             <div className="flex-1 overflow-y-auto p-4">
               <div className="space-y-6">
                 <div>
+                  <h4 className="font-medium mb-3">Model</h4>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">AI Model</span>
+                      <div className="flex gap-1">
+                        {[
+                          { key: "gpt-4", label: "GPT-4" },
+                          { key: "gpt-3.5-turbo", label: "GPT-3.5" },
+                        ].map(({ key, label }) => (
+                          <Button
+                            key={key}
+                            variant={selectedModel === key ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setSelectedModel(key)}
+                            className="text-xs"
+                          >
+                            {label}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
                   <h4 className="font-medium mb-3">Appearance</h4>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
@@ -496,17 +495,17 @@ export default function SyllabusChat() {
                         {[
                           { key: "light", icon: Sun },
                           { key: "dark", icon: Moon },
-                          { key: "auto", icon: null },
+                          { key: "system", icon: null },
                         ].map(({ key, icon: Icon }) => (
                           <Button
                             key={key}
-                            variant={settings.theme === key ? "default" : "outline"}
+                            variant={theme === key ? "default" : "outline"}
                             size="sm"
-                            onClick={() => updateSettings({ theme: key as any })}
+                            onClick={() => setTheme(key)}
                             className="capitalize"
                           >
                             {Icon && <Icon className="w-3 h-3 mr-1" />}
-                            {key}
+                            {key === "system" ? "auto" : key}
                           </Button>
                         ))}
                       </div>
@@ -625,9 +624,9 @@ export default function SyllabusChat() {
               </motion.div>
 
               {/* Welcome Text with AI-generated contextual greeting */}
-              <motion.header variants={itemVariants} className="text-center mb-16 sm:mb-20">
+              <motion.header variants={itemVariants} className="text-center mb-8 sm:mb-12">
                 <motion.p
-                  className="text-xl sm:text-3xl text-black font-semibold text-pretty"
+                  className="text-xl sm:text-3xl text-black dark:text-white font-semibold text-pretty"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.5, duration: 0.6 }}
@@ -635,6 +634,52 @@ export default function SyllabusChat() {
                   {contextualGreeting}
                 </motion.p>
               </motion.header>
+
+              {/* Example prompts - ChatGPT style */}
+              <motion.div variants={itemVariants} className="w-full max-w-4xl mx-auto space-y-4 mb-8 sm:mb-12">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-4 sm:px-0">
+                  {[
+                    "Explain the concept of photosynthesis in simple terms",
+                    "Write a short story about a robot learning to paint",
+                    "Help me understand quantum physics basics",
+                    "Create a study schedule for math exam preparation",
+                    "Generate 10 creative writing prompts for fantasy stories",
+                    "Explain how neural networks work in machine learning",
+                  ].map((prompt, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.7 + index * 0.1, duration: 0.5 }}
+                    >
+                      <motion.div
+                        whileHover={{ scale: 1.02, y: -2 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <Card
+                          className="p-4 sm:p-6 cursor-pointer bg-white dark:bg-slate-800 border-2 border-transparent hover:border-primary/20 transition-all duration-200 group"
+                          onClick={() => {
+                            setInput(prompt)
+                            setTimeout(() => handleSubmit({ preventDefault: () => {} } as any), 100)
+                          }}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+                            <div>
+                              <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                                "{prompt}"
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-2 group-hover:text-primary/80">
+                                Click to start this conversation
+                              </p>
+                            </div>
+                          </div>
+                        </Card>
+                      </motion.div>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
             </motion.div>
           ) : (
             <motion.div
@@ -667,21 +712,20 @@ export default function SyllabusChat() {
                           </motion.div>
                         )}
                         <motion.div
-                          whileHover={{ scale: 1.02 }}
                           className={`max-w-[85%] sm:max-w-[80%] ${message.role === "user" ? "ml-auto" : ""}`}
                         >
-                          <Card
-                            className={`p-3 sm:p-4 ${
+                          <div
+                            className={`px-4 py-2 ${
                               message.role === "user"
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-muted text-muted-foreground"
+                                ? "bg-primary/10 text-foreground"
+                                : "text-muted-foreground"
                             }`}
                           >
                             <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
-                            <time className="text-xs opacity-70 mt-2 block" dateTime={message.timestamp.toISOString()}>
+                            <time className="text-xs opacity-60 mt-1 block" dateTime={message.timestamp.toISOString()}>
                               {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                             </time>
-                          </Card>
+                          </div>
                         </motion.div>
                       </motion.div>
                     ))}
@@ -692,10 +736,12 @@ export default function SyllabusChat() {
                       animate={{ opacity: 1, y: 0 }}
                       className="flex gap-3 justify-start"
                     >
-                      <Avatar className="w-8 h-8 bg-slate-900 flex-shrink-0">
-                        <AvatarFallback className="bg-slate-900 text-white text-sm font-semibold">S</AvatarFallback>
-                      </Avatar>
-                      <Card className="bg-muted text-muted-foreground p-3 sm:p-4">
+                      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2 }}>
+                        <Avatar className="w-8 h-8 bg-slate-900 flex-shrink-0">
+                          <AvatarFallback className="bg-slate-900 text-white text-sm font-semibold">S</AvatarFallback>
+                        </Avatar>
+                      </motion.div>
+                      <div className="text-muted-foreground px-4 py-2">
                         <div className="flex items-center gap-2">
                           <div className="flex gap-1" aria-label="Loading">
                             {[0, 1, 2].map((i) => (
@@ -717,7 +763,7 @@ export default function SyllabusChat() {
                           </div>
                           <span className="text-sm">Thinking...</span>
                         </div>
-                      </Card>
+                      </div>
                     </motion.div>
                   )}
                   <div ref={messagesEndRef} />
@@ -740,7 +786,7 @@ export default function SyllabusChat() {
                 value={input}
                 onChange={handleInputChange}
                 placeholder="Ask anything"
-                className="w-full h-12 sm:h-14 pl-10 sm:pl-12 pr-16 sm:pr-20 text-sm sm:text-base bg-card border-border rounded-2xl shadow-sm focus-visible:ring-2 focus-visible:ring-ring"
+                className="w-full h-12 sm:h-14 pl-10 sm:pl-12 pr-16 sm:pr-20 text-sm sm:text-base bg-card border-2 border-border/50 rounded-2xl shadow-sm focus-visible:ring-2 focus-visible:ring-ring"
                 disabled={isLoading}
                 aria-label="Chat input"
                 maxLength={2000}
@@ -763,7 +809,7 @@ export default function SyllabusChat() {
                     type="submit"
                     variant="ghost"
                     size="icon"
-                    className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-full hover:from-green-600 hover:to-green-700 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    className="w-7 h-7 sm:w-8 sm:h-8 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     disabled={!input.trim() || isLoading}
                     aria-label="Send message"
                   >

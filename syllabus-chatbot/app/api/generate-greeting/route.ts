@@ -31,7 +31,7 @@ export async function POST() {
         "Early bird studying?",
         "Got morning classes?",
       ]
-    } else if (hour >= 17 && hour < 21) {
+    } else if (hour >= 17 && hour < 22) {
       contextualGreetings = [
         "How was school today?",
         "Evening homework time?",
