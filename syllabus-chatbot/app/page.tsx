@@ -9,6 +9,8 @@ import { Card } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Plus, MessageSquare, Settings, Send, X, Trash2, Moon, Sun } from "lucide-react"
 import { motion, AnimatePresence, useAnimation } from "framer-motion"
+import { filterProfanity } from "@/lib/profanity-filter"
+import { ProfanityAlert } from "@/components/profanity-alert"
 
 interface Message {
   id: string
@@ -41,6 +43,10 @@ export default function SyllabusChat() {
 
   const [logoOrbActive, setLogoOrbActive] = useState(false)
   const logoOrbControls = useAnimation()
+
+  // Profanity filtering state
+  const [userProfanityAlert, setUserProfanityAlert] = useState<{ words: string[]; show: boolean }>({ words: [], show: false })
+  const [assistantProfanityAlert, setAssistantProfanityAlert] = useState<{ words: string[]; show: boolean }>({ words: [], show: false })
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -148,6 +154,19 @@ export default function SyllabusChat() {
       const currentInput = inputRef.current?.value || input
       if (!currentInput.trim() || isLoading) return
 
+      // Check for profanity in user input
+      const filterResult = filterProfanity(currentInput.trim())
+      if (filterResult.isBlocked) {
+        setUserProfanityAlert({ words: filterResult.detectedWords, show: true })
+        setTimeout(() => setUserProfanityAlert({ words: [], show: false }), 5000)
+        if (inputRef.current) {
+          inputRef.current.value = ""
+        }
+        setInput("")
+        setIsTyping(false)
+        return
+      }
+
       // Clear input immediately
       if (inputRef.current) {
         inputRef.current.value = ""
@@ -191,6 +210,12 @@ export default function SyllabusChat() {
         }
 
         setMessages((prev) => [...prev, assistantMessage])
+
+        // Check if AI response was blocked
+        if (data.isBlocked) {
+          setAssistantProfanityAlert({ words: data.blockedWords, show: true })
+          setTimeout(() => setAssistantProfanityAlert({ words: [], show: false }), 5000)
+        }
       } catch (error) {
         console.error("Error:", error)
         const errorMessage: Message = {
@@ -310,6 +335,31 @@ export default function SyllabusChat() {
           >
             This feature is in development
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Profanity Alerts */}
+      <AnimatePresence>
+        {userProfanityAlert.show && (
+          <div className="fixed top-16 left-1/2 transform -translate-x-1/2 z-50">
+            <ProfanityAlert
+              blockedWords={userProfanityAlert.words}
+              role="user"
+              onDismiss={() => setUserProfanityAlert({ words: [], show: false })}
+            />
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {assistantProfanityAlert.show && (
+          <div className="fixed top-16 left-1/2 transform -translate-x-1/2 z-50">
+            <ProfanityAlert
+              blockedWords={assistantProfanityAlert.words}
+              role="assistant"
+              onDismiss={() => setAssistantProfanityAlert({ words: [], show: false })}
+            />
+          </div>
         )}
       </AnimatePresence>
 

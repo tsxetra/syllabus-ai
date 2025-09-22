@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { type NextRequest, NextResponse } from "next/server"
+import { filterProfanity } from "@/lib/profanity-filter"
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || "AIzaSyD8Mf5-_ZqR4ciqpV27Oko_vD2H973CKhE")
 
@@ -148,6 +149,18 @@ FINAL AUTHORITY
 
     const response = await result.response
     const aiResponse = response.text()
+
+    // Check for profanity in AI response
+    const filterResult = filterProfanity(aiResponse)
+
+    if (filterResult.isBlocked) {
+      // Return both the filtered content and blocked info
+      return NextResponse.json({
+        content: filterResult.filteredContent,
+        isBlocked: true,
+        blockedWords: filterResult.detectedWords
+      })
+    }
 
     return NextResponse.json({ content: aiResponse })
   } catch (error: any) {
