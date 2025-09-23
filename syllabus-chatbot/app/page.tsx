@@ -9,8 +9,6 @@ import { Card } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Plus, MessageSquare, Settings, Send, X, Trash2, Moon, Sun } from "lucide-react"
 import { motion, AnimatePresence, useAnimation } from "framer-motion"
-import { filterProfanity } from "@/lib/profanity-filter"
-import { ProfanityAlert } from "@/components/profanity-alert"
 
 interface Message {
   id: string
@@ -46,8 +44,7 @@ export default function SyllabusChat() {
   const [logoOrbActive, setLogoOrbActive] = useState(false)
   const logoOrbControls = useAnimation()
 
-  // Profanity filtering state
-  const [userProfanityAlert, setUserProfanityAlert] = useState<{ words: string[]; show: boolean }>({ words: [], show: false })
+
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -154,19 +151,6 @@ export default function SyllabusChat() {
       // Get the current input value directly from the ref
       const currentInput = inputRef.current?.value || input
       if (!currentInput.trim() || isLoading) return
-
-      // Check for profanity in user input
-      const filterResult = filterProfanity(currentInput.trim())
-      if (filterResult.isBlocked) {
-        setUserProfanityAlert({ words: filterResult.detectedWords, show: true })
-        setTimeout(() => setUserProfanityAlert({ words: [], show: false }), 5000)
-        if (inputRef.current) {
-          inputRef.current.value = ""
-        }
-        setInput("")
-        setIsTyping(false)
-        return
-      }
 
       // Clear input immediately
       if (inputRef.current) {
@@ -335,18 +319,7 @@ export default function SyllabusChat() {
         )}
       </AnimatePresence>
 
-      {/* Profanity Alerts */}
-      <AnimatePresence>
-        {userProfanityAlert.show && (
-          <div className="fixed top-16 left-1/2 transform -translate-x-1/2 z-50">
-            <ProfanityAlert
-              blockedWords={userProfanityAlert.words}
-              role="user"
-              onDismiss={() => setUserProfanityAlert({ words: [], show: false })}
-            />
-          </div>
-        )}
-      </AnimatePresence>
+
 
       <motion.nav
         initial={{ x: -64, opacity: 0 }}
@@ -749,21 +722,14 @@ export default function SyllabusChat() {
                         <motion.div
                           className={`max-w-[85%] sm:max-w-[80%] ${message.role === "user" ? "ml-auto" : ""}`}
                         >
-                          {message.isBlocked ? (
-                            <ProfanityAlert
-                              blockedWords={message.blockedWords || []}
-                              role={message.role}
-                              inline
-                              onDismiss={() => {}}
-                            />
-                          ) : (
-                            <div className={`px-4 py-2 rounded-md ${message.role === "user" ? "bg-primary/10 text-foreground" : "text-muted-foreground"}`}>
-                              <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                          <div className={`px-4 py-2 rounded-md ${message.role === "user" ? "bg-primary/10 text-foreground" : message.isBlocked ? "border border-orange-300 bg-orange-50 dark:bg-orange-900 text-orange-800 dark:text-orange-200" : "text-muted-foreground"}`}>
+                            <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                            {message.isBlocked ? null : (
                               <time className="text-xs opacity-60 mt-1 block" dateTime={message.timestamp.toISOString()}>
                                 {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                               </time>
-                            </div>
-                          )}
+                            )}
+                          </div>
                         </motion.div>
                       </motion.div>
                     ))}

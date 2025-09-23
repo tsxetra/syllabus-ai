@@ -45,6 +45,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Latest message must be from user" }, { status: 400 })
     }
 
+    // Check user message for profanity
+    const userFilterResult = filterProfanity(latestMessage.content)
+    if (userFilterResult.isBlocked) {
+      return NextResponse.json({
+        content: `Your message contains inappropriate language. Please rephrase and try again.\n\nDetected words: ${userFilterResult.detectedWords.join(", ")}`,
+        isBlocked: true,
+        blockedWords: userFilterResult.detectedWords
+      })
+    }
+
     const model = genAI.getGenerativeModel({
       model: "gemini-2.5-flash",
       generationConfig: {
@@ -149,18 +159,6 @@ FINAL AUTHORITY
 
     const response = await result.response
     const aiResponse = response.text()
-
-    // Check for profanity in AI response
-    const filterResult = filterProfanity(aiResponse)
-
-    if (filterResult.isBlocked) {
-      // Return error message as the AI response
-      return NextResponse.json({
-        content: `Something went wrong. Your request contained inappropriate language. Detected words: ${filterResult.detectedWords.join(", ")}`,
-        isBlocked: true,
-        blockedWords: filterResult.detectedWords
-      })
-    }
 
     return NextResponse.json({ content: aiResponse })
   } catch (error: any) {
