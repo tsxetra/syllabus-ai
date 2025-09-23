@@ -154,9 +154,9 @@ FINAL AUTHORITY
     const filterResult = filterProfanity(aiResponse)
 
     if (filterResult.isBlocked) {
-      // Return both the filtered content and blocked info
+      // Return error message as the AI response
       return NextResponse.json({
-        content: filterResult.filteredContent,
+        content: `Something went wrong. Your request contained inappropriate language. Detected words: ${filterResult.detectedWords.join(", ")}`,
         isBlocked: true,
         blockedWords: filterResult.detectedWords
       })

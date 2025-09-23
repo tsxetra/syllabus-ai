@@ -6,7 +6,7 @@ const BAD_WORDS = [
   'bastard', 'cunt', 'dick', 'cock', 'pussy', 'dumbass',
   'motherfucker', 'asshole', 'douche', 'twat', 'fucker',
   'bullshit', 'bull crap', 'jackass', 'dipshit', 'faggot',
-  'nigger', 'chink', 'spic', 'gook', 'kike', 'wop', 'coon'
+  'nigger', 'chink', 'spic', 'gook', 'kike', 'wop', 'coon',
 ];
 
 export interface FilterResult {
