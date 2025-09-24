@@ -2,11 +2,16 @@
 
 import type React from "react"
 import { useState, useRef, useEffect, useCallback } from "react"
+import { useSTT } from "@/hooks/useSTT"
+import { useTTS } from "@/hooks/useTTS"
+import { MicButton } from "@/components/MicButton"
+import { VoiceWaveform } from "@/components/VoiceWaveform"
 import { Button } from "@/components/ui/button"
 import { useTheme } from "next-themes"
 import { Card } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Plus, MessageSquare, Settings, Send, X, Trash2, Moon, Sun } from "lucide-react"
+import { Plus, MessageSquare, Settings, Send, X, Trash2, Moon, Sun, Mic, Square, Volume2, VolumeX } from "lucide-react"
+import { Slider } from "@/components/ui/slider"
 import { motion, AnimatePresence, useAnimation } from "framer-motion"
 
 interface Message {
@@ -43,7 +48,141 @@ export default function SyllabusChat() {
   const [logoOrbActive, setLogoOrbActive] = useState(false)
   const logoOrbControls = useAnimation()
 
+  // Voice settings state - persisted in localStorage
+  const [selectedVoice, setSelectedVoice] = useState<"Neutral" | "Friendly" | "Professional">("Neutral")
+  const [speechSpeed, setSpeechSpeed] = useState(1.0)
+  const [isMuted, setIsMuted] = useState(false)
+  const [interimTranscript, setInterimTranscript] = useState("")
 
+  // STT and TTS hooks
+  const { supported: sttSupported, isListening, start: startSTT, stop: stopSTT } = useSTT()
+  const { supported: ttsSupported, isSpeaking, speak } = useTTS()
+
+  // Load voice settings from localStorage
+  useEffect(() => {
+    const savedVoiceSettings = localStorage.getItem("syllabus-voice-settings")
+    if (savedVoiceSettings) {
+      try {
+        const settings = JSON.parse(savedVoiceSettings)
+        setSelectedVoice(settings.selectedVoice || "Neutral")
+        setSpeechSpeed(settings.speechSpeed || 1.0)
+        setIsMuted(settings.isMuted || false)
+      } catch (error) {
+        console.error("Error loading voice settings:", error)
+      }
+    }
+  }, [])
+
+  // Save voice settings to localStorage
+  const saveVoiceSettings = () => {
+    localStorage.setItem("syllabus-voice-settings", JSON.stringify({
+      selectedVoice,
+      speechSpeed,
+      isMuted,
+    }))
+  }
+
+  // Update settings and save
+  const updateSelectedVoice = (voice: typeof selectedVoice) => {
+    setSelectedVoice(voice)
+    setTimeout(saveVoiceSettings, 100)
+  }
+
+  const updateSpeechSpeed = (speed: number) => {
+    setSpeechSpeed(speed)
+    setTimeout(saveVoiceSettings, 100)
+  }
+
+  const updateIsMuted = (muted: boolean) => {
+    setIsMuted(muted)
+    setTimeout(saveVoiceSettings, 100)
+  }
+
+  // Handle voice input workflow
+  const handleVoiceRecording = () => {
+    if (!sttSupported) return
+
+    setInterimTranscript("")
+    startSTT({
+      onInterimTranscript: (text) => {
+        setInterimTranscript(text)
+      },
+      onFinalTranscript: async (text) => {
+        setInterimTranscript("")
+        await processVoiceInput(text)
+      },
+      onError: (error) => {
+        console.error("STT error:", error)
+        setInterimTranscript("")
+      }
+    })
+  }
+
+  const handleVoiceStop = () => {
+    stopSTT()
+    setInterimTranscript("")
+  }
+
+  const processVoiceInput = async (transcription: string) => {
+    try {
+      // Send transcribed text as user message
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        content: transcription,
+        role: "user",
+        timestamp: new Date(),
+      }
+
+      setMessages((prev) => [...prev, userMessage])
+      setIsLoading(true)
+
+      // Get AI response
+      const chatResponse = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [...messages, userMessage].map((msg) => ({
+            role: msg.role,
+            content: msg.content,
+          })),
+        }),
+      })
+
+      const chatData = await chatResponse.json()
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: chatData.content,
+        role: "assistant",
+        timestamp: new Date(),
+      }
+
+      setMessages((prev) => [...prev, assistantMessage])
+
+      // Generate and play TTS audio
+      if (!isMuted && ttsSupported) {
+        try {
+          await speak(chatData.content, {
+            voiceName: selectedVoice,
+            rate: speechSpeed,
+          })
+        } catch (ttsError) {
+          console.error("TTS error:", ttsError)
+        }
+      }
+    } catch (error) {
+      console.error("Voice flow error:", error)
+      // Fallback to error message
+      const fallbackMessage: Message = {
+        id: Date.now().toString(),
+        content: "I couldn't process that voice input. Please try again or type your message.",
+        role: "assistant",
+        timestamp: new Date(),
+      }
+      setMessages((prev) => [...prev, fallbackMessage])
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -519,6 +658,58 @@ export default function SyllabusChat() {
                     </div>
                   </div>
                 </div>
+
+                <div>
+                  <h4 className="font-medium mb-3">Voice</h4>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Voice Style</span>
+                      <div className="flex gap-1">
+                        {[
+                          { key: "Neutral", label: "Neutral" },
+                          { key: "Friendly", label: "Friendly" },
+                          { key: "Professional", label: "Professional" },
+                        ].map(({ key, label }) => (
+                          <Button
+                            key={key}
+                            variant={selectedVoice === key ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => updateSelectedVoice(key as typeof selectedVoice)}
+                            className="text-xs"
+                          >
+                            {label}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Speed</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">0.8x</span>
+                        <Slider
+                          value={[speechSpeed]}
+                          onValueChange={(value) => updateSpeechSpeed(value[0])}
+                          max={1.2}
+                          min={0.8}
+                          step={0.1}
+                          className="w-20"
+                        />
+                        <span className="text-xs text-muted-foreground">1.2x</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">TTS Output</span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => updateIsMuted(!isMuted)}
+                        className="w-8 h-8"
+                      >
+                        {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </motion.div>
@@ -829,6 +1020,52 @@ export default function SyllabusChat() {
             </div>
           </form>
         </motion.footer>
+
+        {/* Interim Transcript Display */}
+        <AnimatePresence>
+          {interimTranscript && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="fixed bottom-28 left-1/2 -translate-x-1/2 bg-card border border-border rounded-full px-6 py-3 shadow-lg z-50"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex gap-1" aria-hidden="true">
+                  {[...Array(5)].map((_, i) => (
+                    <motion.div
+                      key={i}
+                      className="w-1 h-6 bg-primary rounded-full"
+                      animate={{
+                        height: [6, 12, 6],
+                        opacity: [0.4, 1, 0.4],
+                      }}
+                      transition={{
+                        duration: 0.6,
+                        repeat: Number.POSITIVE_INFINITY,
+                        delay: i * 0.1,
+                        ease: "easeInOut",
+                      }}
+                    />
+                  ))}
+                </div>
+                <span className="text-sm text-muted-foreground select-none">
+                  Listening: "{interimTranscript}"
+                </span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Floating Microphone Button */}
+        <VoiceWaveform isRecording={isListening} className="fixed bottom-28 left-1/2 -translate-x-1/2 z-50" />
+        <MicButton
+          isRecording={isListening}
+          isSupported={sttSupported}
+          onPressStart={handleVoiceRecording}
+          onPressEnd={handleVoiceStop}
+          className="fixed bottom-6 right-6 z-40"
+        />
       </main>
     </div>
   )
