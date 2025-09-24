@@ -71,40 +71,31 @@ export function MicButton({
   }
 
   const buttonContent = (
-    <motion.div
-      whileHover={{ scale: isSupported ? 1.1 : 1.0 }}
+    <Button
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onKeyDown={handleKeyDown}
+      className={`w-14 h-14 rounded-full shadow-lg transition-all duration-200 hover:shadow-xl ${
+        !isSupported
+          ? "bg-gray-400 cursor-not-allowed opacity-50"
+          : isRecording
+            ? "bg-red-500 hover:bg-red-600 animate-pulse"
+            : "bg-primary hover:bg-primary/90"
+      } text-primary-foreground ${className}`}
+      disabled={!isSupported}
+      aria-label={isRecording ? "Stop voice recording" : "Start voice recording"}
+      aria-pressed={isRecording}
+      role="button"
+      tabIndex={0}
     >
-      <Button
-        onMouseDown={handleMouseDown}
-        onMouseUp={handleMouseUp}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        onKeyDown={handleKeyDown}
-        className={`w-14 h-14 rounded-full shadow-lg transition-colors duration-200 ${
-          !isSupported
-            ? "bg-gray-400 cursor-not-allowed opacity-50"
-            : isRecording
-              ? "bg-red-500 hover:bg-red-600 animate-pulse"
-              : "bg-primary hover:bg-primary/90"
-        } text-primary-foreground ${className}`}
-        disabled={!isSupported}
-        aria-label={isRecording ? "Stop voice recording" : "Start voice recording"}
-        aria-pressed={isRecording}
-        role="button"
-        tabIndex={0}
-      >
-        <motion.div
-          animate={isRecording ? { rotate: 0 } : { rotate: 0 }}
-          transition={{ duration: 0.2 }}
-        >
-          {isRecording ? (
-            <Square className="w-6 h-6" />
-          ) : (
-            <Mic className="w-6 h-6" />
-          )}
-        </motion.div>
-      </Button>
-    </motion.div>
+      {isRecording ? (
+        <Square className="w-6 h-6" />
+      ) : (
+        <Mic className="w-6 h-6" />
+      )}
+    </Button>
   )
 
   if (!isSupported) {

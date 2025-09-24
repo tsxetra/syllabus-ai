@@ -58,6 +58,57 @@ export function useTTS(): UseTTSReturn {
     return { voiceName: undefined, rate: 1.0 }
   }
 
+  // Voice mapping for ChatGPT-style selection
+  const getVoiceForCategory = (category: string) => {
+    if (!voices.length) return null
+
+    // Get voice scorer function for this category
+    const getVoiceScore = (voice: SpeechSynthesisVoice) => {
+      switch (category) {
+        case 'Neutral':
+          if (voice.name.includes('Google UK English Female')) return 10
+          if (voice.name.includes('Microsoft Zira')) return 8
+          if (voice.lang.includes('en-GB') && voice.name.toLowerCase().includes('female')) return 6
+          if (voice.name.includes('Microsoft Susan')) return 4
+          if (voice.lang.startsWith('en-')) return 2
+          return 0
+
+        case 'Friendly':
+          if (voice.name.includes('Google US English')) return 10
+          if (voice.name.includes('Microsoft Hazel')) return 9
+          if (voice.lang.includes('en-US')) return 7
+          if (voice.name.includes('Google UK English Female')) return 5
+          if (voice.lang.startsWith('en-')) return 2
+          return 0
+
+        case 'Professional':
+          if (voice.name.includes('Microsoft Zira')) return 10
+          if (voice.name.includes('Google UK English Female')) return 9
+          if (voice.name.includes('Microsoft Susan')) return 7
+          if (voice.lang.includes('en-GB') && voice.name.toLowerCase().includes('female')) return 5
+          if (voice.lang.startsWith('en-')) return 2
+          return 0
+
+        default:
+          return voice.lang.startsWith('en-') ? 1 : 0
+      }
+    }
+
+    // Find voice with highest score
+    let bestVoice = voices[0]
+    let bestScore = 0
+
+    for (const voice of voices) {
+      const score = getVoiceScore(voice)
+      if (score > bestScore) {
+        bestScore = score
+        bestVoice = voice
+      }
+    }
+
+    return bestVoice
+  }
+
   const speak = useCallback(async (text: string, options?: SpeechOptions): Promise<void> => {
     if (!supported || !text.trim()) {
       return Promise.resolve()
@@ -76,18 +127,15 @@ export function useTTS(): UseTTSReturn {
 
       utterance.rate = Math.max(0.1, Math.min(10, rate))
 
+      // Use voice mapping for categories, or direct voice name
       if (voiceName) {
-        const selectedVoice = voices.find(voice => voice.name === voiceName)
+        const selectedVoice = voices.find(voice => voice.name === voiceName) || getVoiceForCategory(voiceName)
         if (selectedVoice) {
           utterance.voice = selectedVoice
         }
       } else if (voices.length > 0) {
-        // Default to Google UK English Female if available, otherwise English voice
-        const ukEnglishFemale = voices.find(voice =>
-          voice.name.includes('Google UK English Female') ||
-          (voice.lang.includes('en-GB') && voice.name.toLowerCase().includes('female'))
-        )
-        utterance.voice = ukEnglishFemale || voices.find(voice => voice.lang.startsWith('en-')) || voices[0]
+        // Default to Neutral voice category (Google UK English Female)
+        utterance.voice = getVoiceForCategory('Neutral')
       }
 
       utterance.onstart = () => {
