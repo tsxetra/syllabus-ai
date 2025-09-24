@@ -45,6 +45,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Latest message must be from user" }, { status: 400 })
     }
 
+    // Check message length
+    if (latestMessage.content.length > 25000) {
+      return NextResponse.json({
+        error: "Message is too long. Maximum length is 25,000 characters.",
+        maxLength: 25000,
+        currentLength: latestMessage.content.length
+      }, { status: 400 })
+    }
+
     // Check user message for profanity
     const userFilterResult = filterProfanity(latestMessage.content)
     if (userFilterResult.isBlocked) {
@@ -61,7 +70,7 @@ export async function POST(request: NextRequest) {
         temperature: 0.7,
         topK: 40,
         topP: 0.95,
-        maxOutputTokens: 1024,
+        maxOutputTokens: 8192,
       },
     })
 

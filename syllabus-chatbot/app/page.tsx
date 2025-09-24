@@ -4,7 +4,6 @@ import type React from "react"
 import { useState, useRef, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { useTheme } from "next-themes"
-import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Plus, MessageSquare, Settings, Send, X, Trash2, Moon, Sun } from "lucide-react"
@@ -47,7 +46,7 @@ export default function SyllabusChat() {
 
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
   const orbControls = useAnimation()
   const typingTimeoutRef = useRef<NodeJS.Timeout>()
 
@@ -122,7 +121,7 @@ export default function SyllabusChat() {
   }
 
   const handleInputChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       const value = e.target.value
       setInput(value)
 
@@ -785,15 +784,17 @@ export default function SyllabusChat() {
         >
           <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
             <div className="relative">
-              <Input
+              <textarea
                 ref={inputRef}
                 value={input}
                 onChange={handleInputChange}
-                placeholder="Ask anything"
-                className="w-full h-12 sm:h-14 pl-10 sm:pl-12 pr-16 sm:pr-20 text-sm sm:text-base bg-card border-2 border-border/50 rounded-2xl shadow-sm focus-visible:ring-2 focus-visible:ring-ring"
+                placeholder="Ask anything (essays, long texts supported)"
+                className="w-full h-12 sm:h-14 pl-10 sm:pl-12 pr-16 sm:pr-20 pt-3 pb-3 text-sm sm:text-base bg-card border-2 border-border/50 rounded-2xl shadow-sm focus-visible:ring-2 focus-visible:ring-ring resize-none overflow-auto"
                 disabled={isLoading}
                 aria-label="Chat input"
-                maxLength={2000}
+                rows={1}
+                maxLength={25000}
+                style={{ minHeight: '3rem', maxHeight: '12rem' }}
               />
               <Button
                 type="button"
@@ -824,7 +825,7 @@ export default function SyllabusChat() {
             </div>
             <div className="flex justify-between items-center mt-2 text-xs text-muted-foreground">
               <span>Press Enter to send, Shift+Enter for new line</span>
-              <span>{input.length}/2000</span>
+              <span>{input.length}/25000</span>
             </div>
           </form>
         </motion.footer>
