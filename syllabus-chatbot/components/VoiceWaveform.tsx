@@ -2,10 +2,11 @@ import { motion } from "framer-motion"
 
 interface VoiceWaveformProps {
   isRecording: boolean
+  interimTranscript?: string
   className?: string
 }
 
-export function VoiceWaveform({ isRecording, className = "" }: VoiceWaveformProps) {
+export function VoiceWaveform({ isRecording, interimTranscript = "", className = "" }: VoiceWaveformProps) {
   if (!isRecording) return null
 
   return (
@@ -37,7 +38,7 @@ export function VoiceWaveform({ isRecording, className = "" }: VoiceWaveformProp
           ))}
         </div>
         <span className="text-sm text-muted-foreground select-none">
-          Listening...
+          {interimTranscript ? `Listening: "${interimTranscript}"` : "Listening..."}
         </span>
       </div>
     </motion.div>

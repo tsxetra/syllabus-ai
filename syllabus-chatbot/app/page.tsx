@@ -1021,44 +1021,12 @@ export default function SyllabusChat() {
           </form>
         </motion.footer>
 
-        {/* Interim Transcript Display */}
-        <AnimatePresence>
-          {interimTranscript && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              className="fixed bottom-28 left-1/2 -translate-x-1/2 bg-card border border-border rounded-full px-6 py-3 shadow-lg z-50"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex gap-1" aria-hidden="true">
-                  {[...Array(5)].map((_, i) => (
-                    <motion.div
-                      key={i}
-                      className="w-1 h-6 bg-primary rounded-full"
-                      animate={{
-                        height: [6, 12, 6],
-                        opacity: [0.4, 1, 0.4],
-                      }}
-                      transition={{
-                        duration: 0.6,
-                        repeat: Number.POSITIVE_INFINITY,
-                        delay: i * 0.1,
-                        ease: "easeInOut",
-                      }}
-                    />
-                  ))}
-                </div>
-                <span className="text-sm text-muted-foreground select-none">
-                  Listening: "{interimTranscript}"
-                </span>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         {/* Floating Microphone Button */}
-        <VoiceWaveform isRecording={isListening} className="fixed bottom-28 left-1/2 -translate-x-1/2 z-50" />
+        <VoiceWaveform
+          isRecording={isListening}
+          interimTranscript={interimTranscript}
+          className="fixed bottom-28 left-1/2 -translate-x-1/2 z-50"
+        />
         <MicButton
           isRecording={isListening}
           isSupported={sttSupported}
