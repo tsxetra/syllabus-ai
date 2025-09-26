@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button"
 import { useTheme } from "next-themes"
 import { Card } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Plus, MessageSquare, Settings, Send, X, Trash2, Moon, Sun, Mic, Square, Volume2, VolumeX } from "lucide-react"
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
+import { Plus, MessageSquare, Settings, Send, X, Trash2, Moon, Sun, Mic, Square, Volume2, VolumeX, Zap, EyeOff } from "lucide-react"
 import { Slider } from "@/components/ui/slider"
 import { motion, AnimatePresence, useAnimation } from "framer-motion"
 
@@ -53,6 +54,10 @@ export default function SyllabusChat() {
   const [speechSpeed, setSpeechSpeed] = useState(1.0)
   const [isMuted, setIsMuted] = useState(false)
   const [interimTranscript, setInterimTranscript] = useState("")
+  const [typingTextarea, setTypingTextarea] = useState("")
+  const [isInputExpanded, setIsInputExpanded] = useState(false)
+  const [typingMessageId, setTypingMessageId] = useState<string | null>(null)
+  const typingIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   // STT and TTS hooks
   const { supported: sttSupported, isListening, start: startSTT, stop: stopSTT } = useSTT()
@@ -363,6 +368,43 @@ export default function SyllabusChat() {
     }
   }, [messages])
 
+  // Typing effect for assistant messages
+  useEffect(() => {
+    const lastMessage = messages[messages.length - 1]
+    if (lastMessage && lastMessage.role === "assistant" && lastMessage.id !== typingMessageId) {
+      setTypingMessageId(lastMessage.id)
+      setTypingTextarea("")
+
+      // Clear any existing typing interval
+      if (typingIntervalRef.current) {
+        clearInterval(typingIntervalRef.current)
+      }
+
+      const content = lastMessage.content
+      let charIndex = 0
+
+      typingIntervalRef.current = setInterval(() => {
+        setTypingTextarea((prev) => prev + content.charAt(charIndex))
+        charIndex++
+
+        if (charIndex >= content.length) {
+          clearInterval(typingIntervalRef.current!)
+          setTypingMessageId(null)
+          typingIntervalRef.current = null
+        }
+      }, 30) // ~30ms per character (about 33 chars/second, natural reading speed)
+    }
+  }, [messages, typingMessageId])
+
+  // Cleanup typing interval on unmount
+  useEffect(() => {
+    return () => {
+      if (typingIntervalRef.current) {
+        clearInterval(typingIntervalRef.current)
+      }
+    }
+  }, [])
+
   const handleNewConversation = () => {
     setMessages([])
     setCurrentSessionId(null)
@@ -463,49 +505,69 @@ export default function SyllabusChat() {
         initial={{ x: -64, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="w-16 bg-sidebar border-r border-sidebar-border flex flex-col items-center py-4 space-y-4 flex-shrink-0"
+        className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col py-4 flex-shrink-0"
         aria-label="Main navigation"
       >
-        {/* Logo with orb animation mask */}
+        {/* Logo */}
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2, duration: 0.4 }}
-          className="w-10 h-10 flex items-center justify-center relative cursor-pointer"
-          onClick={handleLogoClick}
+          className="px-3 mb-2"
         >
-          <motion.div animate={logoOrbControls} className="relative w-8 h-8">
-            <motion.div
-              className="absolute inset-0 rounded-full bg-gradient-to-br from-green-400/30 to-green-600/30 blur-sm"
-              animate={{
-                opacity: logoOrbActive ? [0, 1, 0.5, 0] : 0,
-                scale: logoOrbActive ? [0.5, 1.5, 1.8, 0.5] : 1,
-              }}
-              transition={{
-                duration: logoOrbActive ? 1 : 0,
-                repeat: logoOrbActive ? 0 : 0, // Only one loop
-                ease: "easeInOut",
-              }}
-            />
-            <motion.img
-              src="/logo.png"
-              alt="Syllabus AI Logo"
-              className="w-8 h-8 object-contain relative z-10"
-              style={{
-                filter: logoOrbActive
-                  ? "drop-shadow(0 0 12px rgba(34, 197, 94, 0.8)) drop-shadow(0 0 24px rgba(22, 163, 74, 0.4))"
-                  : "none",
-              }}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-            />
-          </motion.div>
+          <div className="w-8 h-8 flex items-center justify-center relative cursor-pointer">
+            <motion.div animate={logoOrbControls} className="relative w-6 h-6">
+              <motion.div
+                className="absolute inset-0 rounded-full bg-gradient-to-br from-green-400/30 to-green-600/30 blur-sm"
+                animate={{
+                  opacity: logoOrbActive ? [0, 1, 0.5, 0] : 0,
+                  scale: logoOrbActive ? [0.5, 1.5, 1.8, 0.5] : 1,
+                }}
+                transition={{
+                  duration: logoOrbActive ? 1 : 0,
+                  repeat: logoOrbActive ? 0 : 0,
+                  ease: "easeInOut",
+                }}
+              />
+              <motion.img
+                src="/logo.png"
+                alt="Syllabus AI Logo"
+                className="w-6 h-6 object-contain relative z-10"
+                style={{
+                  filter: logoOrbActive
+                    ? "drop-shadow(0 0 8px rgba(34, 197, 94, 0.8)) drop-shadow(0 0 16px rgba(22, 163, 74, 0.4))"
+                    : "none",
+                }}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleLogoClick}
+              />
+            </motion.div>
+          </div>
         </motion.div>
 
-        {/* Navigation Icons */}
-        <div className="flex flex-col space-y-3 mt-8 leading-8">
+        {/* Upgrade CTA */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.3, duration: 0.3 }}
+          className="px-3 mb-4"
+        >
+          <Button
+            variant="outline"
+            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200"
+            onClick={() => setShowErrorPopup(true)}
+          >
+            <Zap className="w-4 h-4 mr-2" />
+            Get+
+          </Button>
+        </motion.div>
+
+        {/* Navigation */}
+        <div className="px-3 space-y-1 mb-4">
           {[
-            { Icon: Plus, label: "New conversation", onClick: handleNewConversation },
+            { Icon: Plus, label: "New chat", onClick: handleNewConversation },
+            { Icon: EyeOff, label: "Temporary chat", onClick: handleNewConversation },
             { Icon: MessageSquare, label: "Chat history", onClick: handleChatHistory },
             { Icon: Settings, label: "Settings", onClick: handleSettings },
           ].map(({ Icon, label, onClick }, index) => (
@@ -513,32 +575,66 @@ export default function SyllabusChat() {
               key={index}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.1 * index, duration: 0.3 }}
+              transition={{ delay: 0.4 + index * 0.1, duration: 0.3 }}
             >
               <Button
                 variant="ghost"
-                size="icon"
-                className="w-10 h-10 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                aria-label={label}
+                className="w-full justify-start px-3 py-2 h-10 text-muted-foreground hover:text-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
                 onClick={onClick}
               >
-                <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                <motion.div className="flex items-center gap-3" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <Icon className="w-5 h-5" />
+                  <span className="text-sm">{label}</span>
                 </motion.div>
               </Button>
             </motion.div>
           ))}
         </div>
 
-        {/* User Avatar at bottom */}
-        <div className="flex-1 flex items-end">
+        <div className="flex-1"></div>
+
+        {/* Model Selector */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6, duration: 0.3 }}
+          className="px-3 mb-4"
+        >
+          <Select value={selectedModel} onValueChange={setSelectedModel}>
+            <SelectTrigger className="w-full bg-card border-0 focus:ring-2 focus:ring-ring">
+              <SelectValue placeholder="Select model" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="gpt-4">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                  GPT-4
+                </div>
+              </SelectItem>
+              <SelectItem value="gpt-3.5-turbo">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                  GPT-3.5
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </motion.div>
+
+        {/* User Avatar */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.7, duration: 0.4 }}
+          className="px-3 mb-2"
+        >
           <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
-            <Avatar className="w-10 h-10">
+            <Avatar className="w-8 h-8">
               <AvatarImage src="/diverse-user-avatars.png" alt="User avatar" />
               <AvatarFallback className="bg-slate-900 text-white">U</AvatarFallback>
             </Avatar>
           </motion.div>
-        </div>
+        </motion.div>
       </motion.nav>
 
       <AnimatePresence>
@@ -607,31 +703,6 @@ export default function SyllabusChat() {
             </div>
             <div className="flex-1 overflow-y-auto p-4">
               <div className="space-y-6">
-                <div>
-                  <h4 className="font-medium mb-3">Model</h4>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">AI Model</span>
-                      <div className="flex gap-1">
-                        {[
-                          { key: "gpt-4", label: "GPT-4" },
-                          { key: "gpt-3.5-turbo", label: "GPT-3.5" },
-                        ].map(({ key, label }) => (
-                          <Button
-                            key={key}
-                            variant={selectedModel === key ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setSelectedModel(key)}
-                            className="text-xs"
-                          >
-                            {label}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
                 <div>
                   <h4 className="font-medium mb-3">Appearance</h4>
                   <div className="space-y-2">
@@ -833,8 +904,105 @@ export default function SyllabusChat() {
                 </motion.p>
               </motion.header>
 
+              {/* ChatGPT-style Centered Input */}
+              <motion.div variants={itemVariants} className="w-full max-w-2xl mx-auto">
+                <AnimatePresence mode="wait">
+                  {!isInputExpanded ? (
+                    <motion.div
+                      key="collapsed"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      className="flex justify-center mb-4"
+                    >
+                      <motion.button
+                        onClick={() => setIsInputExpanded(true)}
+                        className={`flex items-center gap-3 px-6 py-3 rounded-full bg-card border-2 border-border/50 hover:border-primary/50 transition-all duration-200 shadow-lg ${isTyping ? 'ring-2 ring-primary/50' : ''}`}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        aria-label="Open chat input"
+                      >
+                        <MessageSquare className="w-5 h-5 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">{input || "Ask anything..."}</span>
+                      </motion.button>
+                    </motion.div>
+                  ) : (
+                    <motion.form
+                      key="expanded"
+                      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 20, scale: 0.95 }}
+                      onSubmit={handleSubmit}
+                      className="mb-8"
+                    >
+                      <motion.div
+                        className="relative bg-card border-2 border-border/50 rounded-2xl shadow-xl focus-within:border-primary/50 transition-all duration-300"
+                        animate={{
+                          boxShadow: isTyping
+                            ? "0 0 30px rgba(34, 197, 94, 0.3), 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)"
+                            : "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)"
+                        }}
+                      >
+                        <textarea
+                          ref={inputRef}
+                          value={input}
+                          onChange={handleInputChange}
+                          placeholder="Ask anything..."
+                          className="w-full h-12 pl-12 pr-20 pt-3 pb-3 text-sm bg-transparent border-0 resize-none overflow-auto focus:ring-0 focus:outline-none"
+                          rows={1}
+                          maxLength={25000}
+                          style={{ minHeight: '3rem', maxHeight: '8rem' }}
+                          autoFocus
+                          onBlur={(e) => {
+                            if (!input.trim()) {
+                              setIsInputExpanded(false)
+                            }
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute left-3 top-1/2 -translate-y-1/2 w-6 h-6 text-muted-foreground hover:text-foreground"
+                          onClick={handlePlusClick}
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                          <Button
+                            type="submit"
+                            variant="ghost"
+                            size="icon"
+                            className="w-8 h-8 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 disabled:opacity-50"
+                            disabled={!input.trim() || isLoading}
+                          >
+                            <Send className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="w-6 h-6 text-muted-foreground hover:text-foreground"
+                            onClick={() => {
+                              if (!input.trim()) {
+                                setIsInputExpanded(false)
+                              }
+                            }}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </motion.div>
+                      <div className="flex justify-center mt-2 text-xs text-muted-foreground">
+                        <span>{input.length}/25000</span>
+                      </div>
+                    </motion.form>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+
               {/* Example prompts - ChatGPT style */}
-              <motion.div variants={itemVariants} className="w-full max-w-4xl mx-auto space-y-4 mb-8 sm:mb-12">
+              <motion.div variants={itemVariants} className="w-full max-w-4xl mx-auto space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-4 sm:px-0">
                   {[
                     "Explain the concept of photosynthesis in simple terms",
@@ -848,7 +1016,7 @@ export default function SyllabusChat() {
                       key={index}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.7 + index * 0.1, duration: 0.5 }}
+                      transition={{ delay: 0.8 + index * 0.1, duration: 0.5 }}
                     >
                       <motion.div
                         whileHover={{ scale: 1.02, y: -2 }}
@@ -858,6 +1026,7 @@ export default function SyllabusChat() {
                           className="p-4 sm:p-6 cursor-pointer bg-white dark:bg-slate-800 border-2 border-transparent hover:border-primary/20 transition-all duration-200 group"
                           onClick={() => {
                             setInput(prompt)
+                            setIsInputExpanded(true)
                             setTimeout(() => handleSubmit({ preventDefault: () => {} } as any), 100)
                           }}
                         >
@@ -913,7 +1082,9 @@ export default function SyllabusChat() {
                           className={`max-w-[85%] sm:max-w-[80%] ${message.role === "user" ? "ml-auto" : ""}`}
                         >
                           <div className={`px-4 py-2 rounded-md ${message.role === "user" ? "bg-primary/10 text-foreground" : message.isBlocked ? "border border-orange-300 bg-orange-50 dark:bg-orange-900 text-orange-800 dark:text-orange-200" : "text-muted-foreground"}`}>
-                            <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                            <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                              {message.role === "assistant" && message.id === typingMessageId ? typingTextarea : message.content}
+                            </p>
                             {message.isBlocked ? null : (
                               <time className="text-xs opacity-60 mt-1 block" dateTime={message.timestamp.toISOString()}>
                                 {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -967,59 +1138,61 @@ export default function SyllabusChat() {
           )}
         </AnimatePresence>
 
-        <motion.footer
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.3, duration: 0.5, ease: "easeOut" }}
-          className="p-4 sm:p-6 border-t border-border bg-background/80 backdrop-blur-sm flex-shrink-0"
-        >
-          <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
-            <div className="relative">
-              <textarea
-                ref={inputRef}
-                value={input}
-                onChange={handleInputChange}
-                placeholder="Ask anything (essays, long texts supported)"
-                className="w-full h-12 sm:h-14 pl-10 sm:pl-12 pr-16 sm:pr-20 pt-3 pb-3 text-sm sm:text-base bg-card border-2 border-border/50 rounded-2xl shadow-sm focus-visible:ring-2 focus-visible:ring-ring resize-none overflow-auto"
-                disabled={isLoading}
-                aria-label="Chat input"
-                rows={1}
-                maxLength={25000}
-                style={{ minHeight: '3rem', maxHeight: '12rem' }}
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-6 h-6 text-muted-foreground hover:text-foreground"
-                aria-label="Add attachment"
-                onClick={handlePlusClick}
-              >
-                <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                  <Plus className="w-4 h-4" />
-                </motion.div>
-              </Button>
-              <div className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 sm:gap-2">
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button
-                    type="submit"
-                    variant="ghost"
-                    size="icon"
-                    className="w-7 h-7 sm:w-8 sm:h-8 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    disabled={!input.trim() || isLoading}
-                    aria-label="Send message"
-                  >
-                    <Send className="w-3 h-3 sm:w-4 sm:h-4" />
-                  </Button>
-                </motion.div>
+        {messages.length > 0 && (
+          <motion.footer
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.5, ease: "easeOut" }}
+            className="p-4 sm:p-6 border-t border-border bg-background/80 backdrop-blur-sm flex-shrink-0"
+          >
+            <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
+              <div className="relative">
+                <textarea
+                  ref={inputRef}
+                  value={input}
+                  onChange={handleInputChange}
+                  placeholder="Ask anything (essays, long texts supported)"
+                  className="w-full h-12 sm:h-14 pl-10 sm:pl-12 pr-16 sm:pr-20 pt-3 pb-3 text-sm sm:text-base bg-card border-2 border-border/50 rounded-2xl shadow-sm focus-visible:ring-2 focus-visible:ring-ring resize-none overflow-auto"
+                  disabled={isLoading}
+                  aria-label="Chat input"
+                  rows={1}
+                  maxLength={25000}
+                  style={{ minHeight: '3rem', maxHeight: '12rem' }}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-6 h-6 text-muted-foreground hover:text-foreground"
+                  aria-label="Add attachment"
+                  onClick={handlePlusClick}
+                >
+                  <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                    <Plus className="w-4 h-4" />
+                  </motion.div>
+                </Button>
+                <div className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 sm:gap-2">
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button
+                      type="submit"
+                      variant="ghost"
+                      size="icon"
+                      className="w-7 h-7 sm:w-8 sm:h-8 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      disabled={!input.trim() || isLoading}
+                      aria-label="Send message"
+                    >
+                      <Send className="w-3 h-3 sm:w-4 sm:h-4" />
+                    </Button>
+                  </motion.div>
+                </div>
               </div>
-            </div>
-            <div className="flex justify-between items-center mt-2 text-xs text-muted-foreground">
-              <span>Press Enter to send, Shift+Enter for new line</span>
-              <span>{input.length}/25000</span>
-            </div>
-          </form>
-        </motion.footer>
+              <div className="flex justify-between items-center mt-2 text-xs text-muted-foreground">
+                <span>Press Enter to send, Shift+Enter for new line</span>
+                <span>{input.length}/25000</span>
+              </div>
+            </form>
+          </motion.footer>
+        )}
 
         {/* Floating Microphone Button */}
         <VoiceWaveform
