@@ -1001,52 +1001,7 @@ export default function SyllabusChat() {
                 </AnimatePresence>
               </motion.div>
 
-              {/* Example prompts - ChatGPT style */}
-              <motion.div variants={itemVariants} className="w-full max-w-4xl mx-auto space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-4 sm:px-0">
-                  {[
-                    "Explain the concept of photosynthesis in simple terms",
-                    "Write a short story about a robot learning to paint",
-                    "Help me understand quantum physics basics",
-                    "Create a study schedule for math exam preparation",
-                    "Generate 10 creative writing prompts for fantasy stories",
-                    "Explain how neural networks work in machine learning",
-                  ].map((prompt, index) => (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.8 + index * 0.1, duration: 0.5 }}
-                    >
-                      <motion.div
-                        whileHover={{ scale: 1.02, y: -2 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        <Card
-                          className="p-4 sm:p-6 cursor-pointer bg-white dark:bg-slate-800 border-2 border-transparent hover:border-primary/20 transition-all duration-200 group"
-                          onClick={() => {
-                            setInput(prompt)
-                            setIsInputExpanded(true)
-                            setTimeout(() => handleSubmit({ preventDefault: () => {} } as any), 100)
-                          }}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
-                            <div>
-                              <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
-                                "{prompt}"
-                              </p>
-                              <p className="text-xs text-muted-foreground mt-2 group-hover:text-primary/80">
-                                Click to start this conversation
-                              </p>
-                            </div>
-                          </div>
-                        </Card>
-                      </motion.div>
-                    </motion.div>
-                  ))}
-                </div>
-              </motion.div>
+
             </motion.div>
           ) : (
             <motion.div
