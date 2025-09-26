@@ -1066,27 +1066,28 @@ export default function SyllabusChat() {
                         initial="hidden"
                         animate="visible"
                         exit={{ opacity: 0, x: message.role === "user" ? 20 : -20 }}
-                        transition={{ delay: index * 0.1 }}
-                        className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                        transition={{ delay: index * 0.1, duration: 0.3, ease: "easeOut" }}
+                        className={`flex gap-3 mb-4 ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                        style={{ marginTop: '1rem' }} /* ChatGPT spacing */
                       >
                         {message.role === "assistant" && (
-                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2 }}>
-                            <Avatar className="w-8 h-8 bg-slate-900 flex-shrink-0">
-                              <AvatarFallback className="bg-slate-900 text-white text-sm font-semibold">
+                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2 + index * 0.1 }}>
+                            <Avatar className="w-8 h-8 bg-primary/20 border border-border flex-shrink-0">
+                              <AvatarFallback className="text-primary text-sm font-semibold">
                                 S
                               </AvatarFallback>
                             </Avatar>
                           </motion.div>
                         )}
                         <motion.div
-                          className={`max-w-[85%] sm:max-w-[80%] ${message.role === "user" ? "ml-auto" : ""}`}
+                          className={`max-w-[85%] sm:max-w-[70%] ${message.role === "user" ? "ml-auto" : ""}`}
                         >
-                          <div className={`px-4 py-2 rounded-md ${message.role === "user" ? "bg-primary/10 text-foreground" : message.isBlocked ? "border border-orange-300 bg-orange-50 dark:bg-orange-900 text-orange-800 dark:text-orange-200" : "text-muted-foreground"}`}>
+                          <div className={`px-4 py-3 rounded-2xl ${message.role === "user" ? "bg-primary text-primary-foreground" : message.isBlocked ? "border border-orange-300 bg-orange-50 dark:bg-orange-900 text-orange-800 dark:text-orange-200 rounded-lg" : "text-muted-foreground"}`}>
                             <p className="text-sm leading-relaxed whitespace-pre-wrap">
                               {message.role === "assistant" && message.id === typingMessageId ? typingTextarea : message.content}
                             </p>
-                            {message.isBlocked ? null : (
-                              <time className="text-xs opacity-60 mt-1 block" dateTime={message.timestamp.toISOString()}>
+                            {!message.isBlocked && (
+                              <time className="text-xs opacity-60 mt-2 block" dateTime={message.timestamp.toISOString()}>
                                 {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                               </time>
                             )}
