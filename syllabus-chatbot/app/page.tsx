@@ -369,9 +369,12 @@ export default function SyllabusChat() {
   }, [messages])
 
   // Typing effect for assistant messages
+  const currentTypingMessageIdRef = useRef<string | null>(null)
+
   useEffect(() => {
     const lastMessage = messages[messages.length - 1]
-    if (lastMessage && lastMessage.role === "assistant" && lastMessage.id !== typingMessageId) {
+    if (lastMessage && lastMessage.role === "assistant" && currentTypingMessageIdRef.current !== lastMessage.id) {
+      currentTypingMessageIdRef.current = lastMessage.id
       setTypingMessageId(lastMessage.id)
       setTypingTextarea("")
 
@@ -391,10 +394,11 @@ export default function SyllabusChat() {
           clearInterval(typingIntervalRef.current!)
           setTypingMessageId(null)
           typingIntervalRef.current = null
+          currentTypingMessageIdRef.current = null
         }
       }, 30) // ~30ms per character (about 33 chars/second, natural reading speed)
     }
-  }, [messages, typingMessageId])
+  }, [messages])
 
   // Cleanup typing interval on unmount
   useEffect(() => {
@@ -672,7 +676,7 @@ export default function SyllabusChat() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="absolute right-1 top-1 opacity-0 group-hover:opacity-100 w-6 h-6"
+                        className="absolute right-1 top-1 opacity-0 group-hover:opacity100 w-6 h-6"
                         onClick={() => deleteChatSession(session.id)}
                       >
                         <Trash2 className="w-3 h-3" />
@@ -906,99 +910,58 @@ export default function SyllabusChat() {
 
               {/* ChatGPT-style Centered Input */}
               <motion.div variants={itemVariants} className="w-full max-w-2xl mx-auto">
-                <AnimatePresence mode="wait">
-                  {!isInputExpanded ? (
-                    <motion.div
-                      key="collapsed"
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.8 }}
-                      className="flex justify-center mb-4"
+                <motion.form
+                  key="expanded"
+                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 20, scale: 0.95 }}
+                  onSubmit={handleSubmit}
+                  className="mb-8"
+                >
+                  <motion.div
+                    className="relative bg-card border-2 border-border/50 rounded-2xl shadow-xl focus-within:border-primary/50 transition-all duration-300"
+                    animate={{
+                      boxShadow: isTyping
+                        ? "0 0 30px rgba(34, 197, 94, 0.3), 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)"
+                        : "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)"
+                    }}
+                  >
+                    <textarea
+                      ref={inputRef}
+                      value={input}
+                      onChange={handleInputChange}
+                      placeholder="Ask anything..."
+                      className="w-full h-12 pl-12 pr-20 pt-3 pb-3 text-sm bg-transparent border-0 resize-none overflow-auto focus:ring-0 focus:outline-none"
+                      rows={1}
+                      maxLength={25000}
+                      style={{ minHeight: '3rem', maxHeight: '8rem' }}
+                      autoFocus
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute left-3 top-1/2 -translate-y-1/2 w-6 h-6 text-muted-foreground hover:text-foreground"
+                      onClick={handlePlusClick}
                     >
-                      <motion.button
-                        onClick={() => setIsInputExpanded(true)}
-                        className={`flex items-center gap-3 px-6 py-3 rounded-full bg-card border-2 border-border/50 hover:border-primary/50 transition-all duration-200 shadow-lg ${isTyping ? 'ring-2 ring-primary/50' : ''}`}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        aria-label="Open chat input"
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                      <Button
+                        type="submit"
+                        variant="ghost"
+                        size="icon"
+                        className="w-8 h-8 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 disabled:opacity-50"
+                        disabled={!input.trim() || isLoading}
                       >
-                        <MessageSquare className="w-5 h-5 text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground">{input || "Ask anything..."}</span>
-                      </motion.button>
-                    </motion.div>
-                  ) : (
-                    <motion.form
-                      key="expanded"
-                      initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                      onSubmit={handleSubmit}
-                      className="mb-8"
-                    >
-                      <motion.div
-                        className="relative bg-card border-2 border-border/50 rounded-2xl shadow-xl focus-within:border-primary/50 transition-all duration-300"
-                        animate={{
-                          boxShadow: isTyping
-                            ? "0 0 30px rgba(34, 197, 94, 0.3), 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)"
-                            : "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)"
-                        }}
-                      >
-                        <textarea
-                          ref={inputRef}
-                          value={input}
-                          onChange={handleInputChange}
-                          placeholder="Ask anything..."
-                          className="w-full h-12 pl-12 pr-20 pt-3 pb-3 text-sm bg-transparent border-0 resize-none overflow-auto focus:ring-0 focus:outline-none"
-                          rows={1}
-                          maxLength={25000}
-                          style={{ minHeight: '3rem', maxHeight: '8rem' }}
-                          autoFocus
-                          onBlur={(e) => {
-                            if (!input.trim()) {
-                              setIsInputExpanded(false)
-                            }
-                          }}
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="absolute left-3 top-1/2 -translate-y-1/2 w-6 h-6 text-muted-foreground hover:text-foreground"
-                          onClick={handlePlusClick}
-                        >
-                          <Plus className="w-4 h-4" />
-                        </Button>
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                          <Button
-                            type="submit"
-                            variant="ghost"
-                            size="icon"
-                            className="w-8 h-8 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 disabled:opacity-50"
-                            disabled={!input.trim() || isLoading}
-                          >
-                            <Send className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="w-6 h-6 text-muted-foreground hover:text-foreground"
-                            onClick={() => {
-                              if (!input.trim()) {
-                                setIsInputExpanded(false)
-                              }
-                            }}
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </motion.div>
-                      <div className="flex justify-center mt-2 text-xs text-muted-foreground">
-                        <span>{input.length}/25000</span>
-                      </div>
-                    </motion.form>
-                  )}
-                </AnimatePresence>
+                        <Send className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </motion.div>
+                  <div className="flex justify-center mt-2 text-xs text-muted-foreground">
+                    <span>{input.length}/25000</span>
+                  </div>
+                </motion.form>
               </motion.div>
 
 

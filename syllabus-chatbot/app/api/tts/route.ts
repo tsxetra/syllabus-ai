@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from "next/server"
 import OpenAI from "openai"
 
-// Initialize OpenAI client (expects OPENAI_API_KEY env var)
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+let openaiClient: OpenAI | null = null
+
+function getOpenAI(): OpenAI {
+  if (!openaiClient) {
+    const apiKey = process.env.OPENAI_API_KEY
+    if (!apiKey) {
+      throw new Error("OPENAI_API_KEY is not set. Please check your environment variables.")
+    }
+    openaiClient = new OpenAI({ apiKey })
+  }
+  return openaiClient
+}
 
 // OpenAI TTS voice mapping (Neutral, Friendly, Professional)
 const voiceMap: Record<string, string> = {
@@ -28,7 +36,7 @@ export async function POST(request: NextRequest) {
     const openaiVoice = voiceMap[voice] || "alloy"
 
     // Call OpenAI TTS API
-    const mp3 = await openai.audio.speech.create({
+    const mp3 = await getOpenAI().audio.speech.create({
       model: "tts-1",
       voice: openaiVoice as any,
       input: text,

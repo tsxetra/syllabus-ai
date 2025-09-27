@@ -2,7 +2,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai"
 import { type NextRequest, NextResponse } from "next/server"
 import { filterProfanity } from "@/lib/profanity-filter"
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || "AIzaSyD8Mf5-_ZqR4ciqpV27Oko_vD2H973CKhE")
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!)
 
 interface Message {
   id: string
@@ -182,8 +182,8 @@ FINAL AUTHORITY
     } else if (error?.message?.includes("429")) {
       errorMessage =
         "Loads of people are using me right now, I just need a moment to catch up. I'll be back shortly. 429."
-    } else if (error?.message?.includes("API key")) {
-      errorMessage = "Syallbus is experiencing issues, please try again later."
+    } else if (error?.message?.includes("API key") || error?.message?.includes("API_KEY_INVALID") || error?.reason === "API_KEY_INVALID") {
+      errorMessage = "API key is not valid or missing. Please check your GOOGLE_AI_API_KEY environment variable."
     }
 
     return NextResponse.json({ error: errorMessage }, { status: 500 })

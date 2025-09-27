@@ -4,76 +4,76 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* ChatGPT-style color scheme for high readability */
+  /* Black and white color scheme with green accents */
   --background: oklch(1 0 0); /* Pure white background */
   --foreground: oklch(0.15 0 0); /* Dark text */
   --card: oklch(1 0 0); /* Pure white cards */
   --card-foreground: oklch(0.15 0 0); /* Dark card text */
   --popover: oklch(1 0 0); /* White popover */
   --popover-foreground: oklch(0.15 0 0); /* Dark popover text */
-  --primary: oklch(0.6 0.18 245); /* Blue for user messages, like ChatGPT */
+  --primary: oklch(0.6 0.18 142); /* Green for user messages */
   --primary-foreground: oklch(1 0 0); /* White on primary */
-  --secondary: oklch(0.95 0.02 270); /* Light gray secondary */
+  --secondary: oklch(0.95 0.02 180); /* Light gray secondary */
   --secondary-foreground: oklch(0.2 0 0); /* Dark gray secondary text */
-  --muted: oklch(0.93 0.01 270); /* Very light gray muted */
+  --muted: oklch(0.93 0.01 180); /* Very light gray muted */
   --muted-foreground: oklch(0.5 0 0); /* Medium gray muted text */
-  --accent: oklch(0.95 0.02 270); /* Light accent */
+  --accent: oklch(0.95 0.02 180); /* Light accent */
   --accent-foreground: oklch(0.15 0 0); /* Dark on accent */
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.92 0.01 270); /* Light gray borders */
+  --border: oklch(0.92 0.01 180); /* Light gray borders */
   --input: oklch(1 0 0); /* White input */
-  --ring: oklch(0.6 0.18 245); /* Blue focus ring */
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
+  --ring: oklch(0.6 0.18 142); /* Green focus ring */
+  --chart-1: oklch(0.6 0.2 132); /* Dark green */
+  --chart-2: oklch(0.7 0.15 142); /* Medium green */
+  --chart-3: oklch(0.8 0.1 152); /* Light green */
+  --chart-4: oklch(0.5 0.25 132); /* Darker green */
+  --chart-5: oklch(0.65 0.2 142); /* Olive green */
   --radius: 0.375rem; /* ChatGPT uses gentle rounded corners */
-  --sidebar: oklch(0.98 0.01 270); /* Light sidebar */
+  --sidebar: oklch(0.98 0.01 180); /* Light sidebar */
   --sidebar-foreground: oklch(0.2 0 0); /* Dark sidebar text */
-  --sidebar-primary: oklch(0.6 0.18 245); /* Blue sidebar primary */
+  --sidebar-primary: oklch(0.6 0.18 142); /* Green sidebar primary */
   --sidebar-primary-foreground: oklch(1 0 0); /* White sidebar primary text */
-  --sidebar-accent: oklch(0.95 0.02 270); /* Light sidebar accent */
+  --sidebar-accent: oklch(0.95 0.02 180); /* Light sidebar accent */
   --sidebar-accent-foreground: oklch(0.2 0 0); /* Dark sidebar accent text */
-  --sidebar-border: oklch(0.9 0.01 270); /* Light sidebar borders */
-  --sidebar-ring: oklch(0.6 0.18 245); /* Blue sidebar focus ring */
+  --sidebar-border: oklch(0.9 0.01 180); /* Light sidebar borders */
+  --sidebar-ring: oklch(0.6 0.18 142); /* Green sidebar focus ring */
 }
 
 .dark {
-  /* ChatGPT-style dark mode for high contrast readability */
+  /* Black and white dark mode with green accents */
   --background: oklch(0.08 0 0); /* Very dark background */
   --foreground: oklch(0.95 0 0); /* White text */
-  --card: oklch(0.12 0.01 270); /* Dark gray cards */
+  --card: oklch(0.12 0.01 180); /* Dark gray cards */
   --card-foreground: oklch(0.95 0 0); /* White card text */
   --popover: oklch(0.08 0 0); /* Dark popover */
   --popover-foreground: oklch(0.95 0 0); /* White popover text */
-  --primary: oklch(0.7 0.15 240); /* Blue primary for dark mode */
-  --primary-foreground: oklch(1 0 0); /* White on primary */
-  --secondary: oklch(0.18 0.02 270); /* Medium gray secondary */
+  --primary: oklch(0.7 0.15 142); /* Green primary for dark mode */
+  --primary-foreground: oklch(0 0 0); /* White on primary */
+  --secondary: oklch(0.18 0.02 180); /* Medium gray secondary */
   --secondary-foreground: oklch(0.9 0 0); /* Light gray secondary text */
-  --muted: oklch(0.2 0.02 270); /* Light gray muted */
+  --muted: oklch(0.2 0.02 180); /* Light gray muted */
   --muted-foreground: oklch(0.75 0 0); /* Medium gray muted text */
-  --accent: oklch(0.22 0.02 270); /* Slightly lighter accent */
+  --accent: oklch(0.22 0.02 180); /* Slightly lighter accent */
   --accent-foreground: oklch(0.95 0 0); /* White on accent */
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.25 0.01 270); /* Dark mode borders */
-  --input: oklch(0.15 0.01 270); /* Dark input */
-  --ring: oklch(0.7 0.15 240); /* Blue ring */
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.12 0.02 270); /* Dark sidebar */
+  --border: oklch(0.25 0.01 180); /* Dark mode borders */
+  --input: oklch(0.15 0.01 180); /* Dark input */
+  --ring: oklch(0.7 0.15 142); /* Green ring */
+  --chart-1: oklch(0.6 0.2 132); /* Dark green */
+  --chart-2: oklch(0.7 0.15 142); /* Medium green */
+  --chart-3: oklch(0.8 0.1 152); /* Light green */
+  --chart-4: oklch(0.5 0.25 132); /* Darker green */
+  --chart-5: oklch(0.65 0.2 142); /* Olive green */
+  --sidebar: oklch(0.12 0.02 180); /* Dark sidebar */
   --sidebar-foreground: oklch(0.9 0 0); /* Light sidebar text */
-  --sidebar-primary: oklch(0.7 0.15 240); /* Blue sidebar primary */
-  --sidebar-primary-foreground: oklch(0.1 0 0); /* Dark sidebar primary text */
-  --sidebar-accent: oklch(0.18 0.02 270); /* Medium sidebar accent */
+  --sidebar-primary: oklch(0.7 0.15 142); /* Green sidebar primary */
+  --sidebar-primary-foreground: oklch(0.08 0 0); /* Dark sidebar primary text */
+  --sidebar-accent: oklch(0.18 0.02 180); /* Medium sidebar accent */
   --sidebar-accent-foreground: oklch(0.9 0 0); /* Light sidebar accent text */
-  --sidebar-border: oklch(0.25 0.01 270); /* Dark sidebar borders */
-  --sidebar-ring: oklch(0.7 0.15 240); /* Blue sidebar ring */
+  --sidebar-border: oklch(0.25 0.01 180); /* Dark sidebar borders */
+  --sidebar-ring: oklch(0.7 0.15 142); /* Green sidebar ring */
 }
 
 @theme inline {
@@ -126,9 +126,9 @@
   }
 }
 
-/* Enhanced holographic orb with better gradients and animations */
+/* Enhanced holographic orb with green gradients and animations */
 .holographic-orb {
-  background: conic-gradient(from 0deg, #8b5cf6, #ec4899, #f97316, #10b981, #3b82f6, #8b5cf6);
+  background: conic-gradient(from 0deg, #065f46, #10b981, #34d399, #6ee7b7, #a7f3d0, #065f46);
   animation: rotate 8s linear infinite;
   position: relative;
 }
@@ -137,7 +137,7 @@
   content: "";
   position: absolute;
   inset: -2px;
-  background: conic-gradient(from 0deg, #8b5cf6, #ec4899, #f97316, #10b981, #3b82f6, #8b5cf6);
+  background: conic-gradient(from 0deg, #065f46, #10b981, #34d399, #6ee7b7, #a7f3d0, #065f46);
   border-radius: inherit;
   z-index: -1;
   filter: blur(8px);
@@ -145,7 +145,7 @@
 }
 
 .orb-glow {
-  box-shadow: 0 0 60px rgba(139, 92, 246, 0.4), 0 0 120px rgba(236, 72, 153, 0.3), 0 0 180px rgba(249, 115, 22, 0.2);
+  box-shadow: 0 0 60px rgba(16, 185, 129, 0.4), 0 0 120px rgba(52, 211, 153, 0.3), 0 0 180px rgba(110, 231, 183, 0.2);
   animation: pulse-glow 3s ease-in-out infinite alternate;
 }
 
@@ -153,16 +153,16 @@
 @keyframes pulse-glow {
   0%,
   100% {
-    box-shadow: 0 0 60px rgba(139, 92, 246, 0.4), 0 0 120px rgba(236, 72, 153, 0.3), 0 0 180px rgba(249, 115, 22, 0.2);
+    box-shadow: 0 0 60px rgba(16, 185, 129, 0.4), 0 0 120px rgba(52, 211, 153, 0.3), 0 0 180px rgba(110, 231, 183, 0.2);
   }
   50% {
-    box-shadow: 0 0 80px rgba(139, 92, 246, 0.6), 0 0 160px rgba(236, 72, 153, 0.4), 0 0 240px rgba(249, 115, 22, 0.3);
+    box-shadow: 0 0 80px rgba(16, 185, 129, 0.6), 0 0 160px rgba(52, 211, 153, 0.4), 0 0 240px rgba(110, 231, 183, 0.3);
   }
 }
 
-/* Enhanced gradient text with better color transitions */
+/* Enhanced gradient text with green color transitions */
 .gradient-text {
-  background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 30%, #f97316 60%, #10b981 100%);
+  background: linear-gradient(135deg, #065f46 0%, #10b981 25%, #34d399 50%, #6ee7b7 75%, #a7f3d0 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -189,7 +189,7 @@
 .card-hover:hover {
   transform: translateY(-4px) scale(1.02);
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04), 0 0 0 1px
-    rgba(139, 92, 246, 0.1);
+    rgba(16, 185, 129, 0.1);
 }
 
 /* Enhanced button animations with better feedback */
@@ -256,7 +256,7 @@
 /* Enhanced focus states with better visibility */
 .focus-enhanced:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--color-background), 0 0 0 4px var(--color-ring), 0 0 20px rgba(139, 92, 246, 0.3);
+  box-shadow: 0 0 0 2px var(--color-background), 0 0 0 4px var(--color-ring), 0 0 20px rgba(16, 185, 129, 0.3);
   transform: scale(1.02);
 }
 

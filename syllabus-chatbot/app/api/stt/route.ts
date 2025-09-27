@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from "next/server"
 import OpenAI from "openai"
 
-// Initialize OpenAI client (expects OPENAI_API_KEY env var)
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+let openaiClient: OpenAI | null = null
+
+function getOpenAI(): OpenAI {
+  if (!openaiClient) {
+    const apiKey = process.env.OPENAI_API_KEY
+    if (!apiKey) {
+      throw new Error("OPENAI_API_KEY is not set. Please check your environment variables.")
+    }
+    openaiClient = new OpenAI({ apiKey })
+  }
+  return openaiClient
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,7 +27,7 @@ export async function POST(request: NextRequest) {
     const file = new File([audioBlob], "audio.webm", { type: "audio/webm" })
 
     // Call OpenAI Whisper API (gpt-4o-transcribe supports faster transcription)
-    const transcription = await openai.audio.transcriptions.create({
+    const transcription = await getOpenAI().audio.transcriptions.create({
       file: file,
       model: "gpt-4o-transcribe",
       response_format: "text", // Gets plain text response
