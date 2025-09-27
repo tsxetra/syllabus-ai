@@ -396,7 +396,7 @@ export default function SyllabusChat() {
           typingIntervalRef.current = null
           currentTypingMessageIdRef.current = null
         }
-      }, 30) // ~30ms per character (about 33 chars/second, natural reading speed)
+      }, 5) // 5ms per character (rapid typing speed)
     }
   }, [messages])
 
@@ -930,6 +930,12 @@ export default function SyllabusChat() {
                       ref={inputRef}
                       value={input}
                       onChange={handleInputChange}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault()
+                          handleSubmit(e)
+                        }
+                      }}
                       placeholder="Ask anything..."
                       className="w-full h-12 pl-12 pr-20 pt-3 pb-3 text-sm bg-transparent border-0 resize-none overflow-auto focus:ring-0 focus:outline-none"
                       rows={1}
@@ -1070,6 +1076,12 @@ export default function SyllabusChat() {
                   ref={inputRef}
                   value={input}
                   onChange={handleInputChange}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault()
+                      handleSubmit(e)
+                    }
+                  }}
                   placeholder="Ask anything (essays, long texts supported)"
                   className="w-full h-12 sm:h-14 pl-10 sm:pl-12 pr-16 sm:pr-20 pt-3 pb-3 text-sm sm:text-base bg-card border-2 border-border/50 rounded-2xl shadow-sm focus-visible:ring-2 focus-visible:ring-ring resize-none overflow-auto"
                   disabled={isLoading}
