@@ -7,13 +7,20 @@ import { useTTS } from "@/hooks/useTTS"
 import { MicButton } from "@/components/MicButton"
 import { VoiceWaveform } from "@/components/VoiceWaveform"
 import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
 import { useTheme } from "next-themes"
 import { Card } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
-import { Plus, MessageSquare, Settings, Send, X, Trash2, Moon, Sun, Mic, Square, Volume2, VolumeX, Zap, EyeOff } from "lucide-react"
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import { Badge } from "@/components/ui/badge"
+import { Progress } from "@/components/ui/progress"
+import { Plus, MessageSquare, Settings, Send, X, Trash2, Moon, Sun, Mic, Square, Volume2, VolumeX, Zap, EyeOff, AlertTriangle } from "lucide-react"
 import { Slider } from "@/components/ui/slider"
 import { motion, AnimatePresence, useAnimation } from "framer-motion"
+
+import { MessageContent } from "@/components/MessageContent"
 
 interface Message {
   id: string
@@ -41,6 +48,8 @@ export default function SyllabusChat() {
   const [showChatHistory, setShowChatHistory] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [showErrorPopup, setShowErrorPopup] = useState(false)
+  const [chatHistoryOpen, setChatHistoryOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([])
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null)
@@ -190,7 +199,6 @@ export default function SyllabusChat() {
   }
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLTextAreaElement>(null)
   const orbControls = useAnimation()
   const typingTimeoutRef = useRef<NodeJS.Timeout>()
 
@@ -292,13 +300,9 @@ export default function SyllabusChat() {
       e.preventDefault()
 
       // Get the current input value directly from the ref
-      const currentInput = inputRef.current?.value || input
+      const currentInput = input
       if (!currentInput.trim() || isLoading) return
 
-      // Clear input immediately
-      if (inputRef.current) {
-        inputRef.current.value = ""
-      }
       setInput("")
       setIsTyping(false)
 
@@ -421,8 +425,7 @@ export default function SyllabusChat() {
   }
 
   const handleSettings = () => {
-    setShowSettings(!showSettings)
-    setShowChatHistory(false)
+    setSettingsOpen(!settingsOpen)
   }
 
   const handlePlusClick = () => {
@@ -433,7 +436,7 @@ export default function SyllabusChat() {
   const loadChatSession = (session: ChatSession) => {
     setMessages(session.messages)
     setCurrentSessionId(session.id)
-    setShowChatHistory(false)
+    setChatHistoryOpen(false)
   }
 
   const deleteChatSession = (sessionId: string) => {
@@ -490,15 +493,149 @@ export default function SyllabusChat() {
 
   return (
     <div className="h-screen w-screen bg-background flex overflow-hidden">
+      <Sheet open={chatHistoryOpen} onOpenChange={setChatHistoryOpen}>
+        <SheetContent side="left" className="w-80">
+          <SheetHeader>
+            <SheetTitle>Chat History</SheetTitle>
+          </SheetHeader>
+          <div className="flex-1 overflow-y-auto p-4">
+            {chatSessions.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No previous conversations</p>
+            ) : (
+              <div className="space-y-2">
+                {chatSessions.map((session) => (
+                  <div key={session.id} className="group relative">
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start text-left h-auto p-3 hover:bg-muted"
+                      onClick={() => loadChatSession(session)}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{session.title}</p>
+                        <p className="text-xs text-muted-foreground">{session.lastActivity.toLocaleDateString()}</p>
+                      </div>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1 opacity-0 group-hover:opacity-100 w-6 h-6"
+                      onClick={() => deleteChatSession(session.id)}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <SheetContent side="left" className="w-80">
+          <SheetHeader>
+            <SheetTitle>Settings</SheetTitle>
+          </SheetHeader>
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="space-y-6">
+              <div>
+                <h4 className="font-medium mb-3">Appearance</h4>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Theme</span>
+                    <div className="flex gap-1">
+                      {[
+                        { key: "light", icon: Sun },
+                        { key: "dark", icon: Moon },
+                        { key: "system", icon: null },
+                      ].map(({ key, icon: Icon }) => (
+                        <Button
+                          key={key}
+                          variant={theme === key ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setTheme(key)}
+                          className="capitalize"
+                        >
+                          {Icon && <Icon className="w-3 h-3 mr-1" />}
+                          {key === "system" ? "auto" : key}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-medium mb-3">Voice</h4>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Voice Style</span>
+                    <div className="flex gap-1">
+                      {[
+                        { key: "Neutral", label: "Neutral" },
+                        { key: "Friendly", label: "Friendly" },
+                        { key: "Professional", label: "Professional" },
+                      ].map(({ key, label }) => (
+                        <Button
+                          key={key}
+                          variant={selectedVoice === key ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => updateSelectedVoice(key as typeof selectedVoice)}
+                          className="text-xs"
+                        >
+                          {label}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Speed</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">0.8x</span>
+                      <Slider
+                        value={[speechSpeed]}
+                        onValueChange={(value) => updateSpeechSpeed(value[0])}
+                        max={1.2}
+                        min={0.8}
+                        step={0.1}
+                        className="w-20"
+                      />
+                      <span className="text-xs text-muted-foreground">1.2x</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">TTS Output</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => updateIsMuted(!isMuted)}
+                      className="w-8 h-8"
+                    >
+                      {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+
       <AnimatePresence>
         {showErrorPopup && (
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            className="fixed top-4 right-4 z-50 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg"
+            className="fixed top-4 right-4 z-50"
           >
-            This feature is in development
+            <Alert className="bg-red-500 text-white border-red-600 max-w-sm">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Under Development</AlertTitle>
+              <AlertDescription>
+                This feature is in development
+              </AlertDescription>
+            </Alert>
           </motion.div>
         )}
       </AnimatePresence>
@@ -572,7 +709,7 @@ export default function SyllabusChat() {
           {[
             { Icon: Plus, label: "New chat", onClick: handleNewConversation },
             { Icon: EyeOff, label: "Temporary chat", onClick: handleNewConversation },
-            { Icon: MessageSquare, label: "Chat history", onClick: handleChatHistory },
+            { Icon: MessageSquare, label: "Chat history", isSheet: true, onClick: () => setChatHistoryOpen(true) },
             { Icon: Settings, label: "Settings", onClick: handleSettings },
           ].map(({ Icon, label, onClick }, index) => (
             <motion.div
@@ -641,155 +778,9 @@ export default function SyllabusChat() {
         </motion.div>
       </motion.nav>
 
-      <AnimatePresence>
-        {showChatHistory && (
-          <motion.div
-            initial={{ x: -300, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -300, opacity: 0 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-            className="w-80 bg-card border-r border-border flex flex-col flex-shrink-0"
-          >
-            <div className="p-4 border-b border-border flex items-center justify-between">
-              <h3 className="font-semibold">Chat History</h3>
-              <Button variant="ghost" size="icon" onClick={() => setShowChatHistory(false)}>
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4">
-              {chatSessions.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No previous conversations</p>
-              ) : (
-                <div className="space-y-2">
-                  {chatSessions.map((session) => (
-                    <div key={session.id} className="group relative">
-                      <Button
-                        variant="ghost"
-                        className="w-full justify-start text-left h-auto p-3 hover:bg-muted"
-                        onClick={() => loadChatSession(session)}
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{session.title}</p>
-                          <p className="text-xs text-muted-foreground">{session.lastActivity.toLocaleDateString()}</p>
-                        </div>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-1 top-1 opacity-0 group-hover:opacity100 w-6 h-6"
-                        onClick={() => deleteChatSession(session.id)}
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
-      <AnimatePresence>
-        {showSettings && (
-          <motion.div
-            initial={{ x: -300, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -300, opacity: 0 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-            className="w-80 bg-card border-r border-border flex flex-col flex-shrink-0"
-          >
-            <div className="p-4 border-b border-border flex items-center justify-between">
-              <h3 className="font-semibold">Settings</h3>
-              <Button variant="ghost" size="icon" onClick={() => setShowSettings(false)}>
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4">
-              <div className="space-y-6">
-                <div>
-                  <h4 className="font-medium mb-3">Appearance</h4>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Theme</span>
-                      <div className="flex gap-1">
-                        {[
-                          { key: "light", icon: Sun },
-                          { key: "dark", icon: Moon },
-                          { key: "system", icon: null },
-                        ].map(({ key, icon: Icon }) => (
-                          <Button
-                            key={key}
-                            variant={theme === key ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setTheme(key)}
-                            className="capitalize"
-                          >
-                            {Icon && <Icon className="w-3 h-3 mr-1" />}
-                            {key === "system" ? "auto" : key}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
 
-                <div>
-                  <h4 className="font-medium mb-3">Voice</h4>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Voice Style</span>
-                      <div className="flex gap-1">
-                        {[
-                          { key: "Neutral", label: "Neutral" },
-                          { key: "Friendly", label: "Friendly" },
-                          { key: "Professional", label: "Professional" },
-                        ].map(({ key, label }) => (
-                          <Button
-                            key={key}
-                            variant={selectedVoice === key ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => updateSelectedVoice(key as typeof selectedVoice)}
-                            className="text-xs"
-                          >
-                            {label}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Speed</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">0.8x</span>
-                        <Slider
-                          value={[speechSpeed]}
-                          onValueChange={(value) => updateSpeechSpeed(value[0])}
-                          max={1.2}
-                          min={0.8}
-                          step={0.1}
-                          className="w-20"
-                        />
-                        <span className="text-xs text-muted-foreground">1.2x</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">TTS Output</span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => updateIsMuted(!isMuted)}
-                        className="w-8 h-8"
-                      >
-                        {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+
 
       <main className="flex-1 flex flex-col min-w-0 h-full">
         <AnimatePresence mode="wait">
@@ -926,8 +917,7 @@ export default function SyllabusChat() {
                         : "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)"
                     }}
                   >
-                    <textarea
-                      ref={inputRef}
+                    <Textarea
                       value={input}
                       onChange={handleInputChange}
                       onKeyDown={(e) => {
@@ -937,10 +927,8 @@ export default function SyllabusChat() {
                         }
                       }}
                       placeholder="Ask anything..."
-                      className="w-full h-12 pl-12 pr-20 pt-3 pb-3 text-sm bg-transparent border-0 resize-none overflow-auto focus:ring-0 focus:outline-none"
-                      rows={1}
+                      className="pl-12 pr-20 pt-3 pb-3 bg-transparent border-0 resize-none overflow-auto max-h-32"
                       maxLength={25000}
-                      style={{ minHeight: '3rem', maxHeight: '8rem' }}
                       autoFocus
                     />
                     <Button
@@ -964,8 +952,13 @@ export default function SyllabusChat() {
                       </Button>
                     </div>
                   </motion.div>
-                  <div className="flex justify-center mt-2 text-xs text-muted-foreground">
-                    <span>{input.length}/25000</span>
+                  <div className="flex justify-center mt-2">
+                    <div className="w-full max-w-sm">
+                      <Progress value={(input.length / 25000) * 100} className="h-1" />
+                      <p className="text-xs text-muted-foreground mt-1 text-center">
+                        {input.length}/25000 characters
+                      </p>
+                    </div>
                   </div>
                 </motion.form>
               </motion.div>
@@ -1006,16 +999,14 @@ export default function SyllabusChat() {
                         <motion.div
                           className={`max-w-[85%] sm:max-w-[70%] ${message.role === "user" ? "ml-auto" : ""}`}
                         >
-                          <div className={`px-4 py-3 rounded-2xl ${message.role === "user" ? "bg-primary text-primary-foreground" : message.isBlocked ? "border border-orange-300 bg-orange-50 dark:bg-orange-900 text-orange-800 dark:text-orange-200 rounded-lg" : "text-muted-foreground"}`}>
-                            <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                              {message.role === "assistant" && message.id === typingMessageId ? typingTextarea : message.content}
-                            </p>
-                            {!message.isBlocked && (
-                              <time className="text-xs opacity-60 mt-2 block" dateTime={message.timestamp.toISOString()}>
-                                {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                              </time>
-                            )}
-                          </div>
+                          <Card className={`px-4 py-3 rounded-2xl ${message.role === "user" ? "bg-primary text-primary-foreground" : message.isBlocked ? "border border-orange-300 bg-orange-50 dark:bg-orange-900 text-orange-800 dark:text-orange-200" : "bg-muted/50"}`}>
+                            <MessageContent
+                              content={message.role === "assistant" && message.id === typingMessageId ? typingTextarea : message.content}
+                              role={message.role}
+                              timestamp={!message.isBlocked ? message.timestamp : undefined}
+                              isTyping={message.role === "assistant" && message.id === typingMessageId}
+                            />
+                          </Card>
                         </motion.div>
                       </motion.div>
                     ))}
@@ -1031,29 +1022,25 @@ export default function SyllabusChat() {
                           <AvatarFallback className="bg-slate-900 text-white text-sm font-semibold">S</AvatarFallback>
                         </Avatar>
                       </motion.div>
-                      <div className="text-muted-foreground px-4 py-2">
+                      <Card className="px-4 py-2">
                         <div className="flex items-center gap-2">
-                          <div className="flex gap-1" aria-label="Loading">
-                            {[0, 1, 2].map((i) => (
-                              <motion.div
-                                key={i}
-                                className="w-2 h-2 bg-primary rounded-full"
-                                animate={{
-                                  y: [-2, -8, -2],
-                                  opacity: [0.5, 1, 0.5],
-                                }}
-                                transition={{
-                                  duration: 0.6,
-                                  repeat: Number.POSITIVE_INFINITY,
-                                  delay: i * 0.1,
-                                  ease: "easeInOut",
-                                }}
-                              />
-                            ))}
-                          </div>
-                          <span className="text-sm">Thinking...</span>
+                          <Badge variant="secondary" className="relative">
+                            <span>AI Thinking</span>
+                            <motion.div
+                              className="absolute inset-0 rounded-full bg-current opacity-30"
+                              animate={{
+                                scale: [1, 1.2, 1],
+                                opacity: [0.3, 0.6, 0.3],
+                              }}
+                              transition={{
+                                duration: 1.5,
+                                repeat: Number.POSITIVE_INFINITY,
+                                ease: "easeInOut",
+                              }}
+                            />
+                          </Badge>
                         </div>
-                      </div>
+                      </Card>
                     </motion.div>
                   )}
                   <div ref={messagesEndRef} />
@@ -1072,8 +1059,7 @@ export default function SyllabusChat() {
           >
             <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
               <div className="relative">
-                <textarea
-                  ref={inputRef}
+                <Textarea
                   value={input}
                   onChange={handleInputChange}
                   onKeyDown={(e) => {
@@ -1083,12 +1069,9 @@ export default function SyllabusChat() {
                     }
                   }}
                   placeholder="Ask anything (essays, long texts supported)"
-                  className="w-full h-12 sm:h-14 pl-10 sm:pl-12 pr-16 sm:pr-20 pt-3 pb-3 text-sm sm:text-base bg-card border-2 border-border/50 rounded-2xl shadow-sm focus-visible:ring-2 focus-visible:ring-ring resize-none overflow-auto"
+                  className="pl-10 sm:pl-12 pr-16 sm:pr-20 pt-3 pb-3 bg-transparent border-0 resize-none overflow-auto max-h-64"
                   disabled={isLoading}
-                  aria-label="Chat input"
-                  rows={1}
                   maxLength={25000}
-                  style={{ minHeight: '3rem', maxHeight: '12rem' }}
                 />
                 <Button
                   type="button"
@@ -1118,8 +1101,12 @@ export default function SyllabusChat() {
                 </div>
               </div>
               <div className="flex justify-between items-center mt-2 text-xs text-muted-foreground">
-                <span>Press Enter to send, Shift+Enter for new line</span>
-                <span>{input.length}/25000</span>
+                <Badge variant="outline" className="text-xs">
+                  Press Enter to send, Shift+Enter for new line
+                </Badge>
+                <Badge variant="secondary" className="text-xs">
+                  {input.length}/25000
+                </Badge>
               </div>
             </form>
           </motion.footer>

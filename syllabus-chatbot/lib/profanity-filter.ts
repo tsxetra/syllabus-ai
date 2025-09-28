@@ -1,11 +1,25 @@
 // Configurable list of bad words - can be expanded or loaded from external source
 const BAD_WORDS = [
-  // Common profanity
+  // Core profanity
   'fuck', 'shit', 'ass', 'bitch', 'damn', 'crap', 'piss',
-  // More bad words - add as needed
-  'bastard', 'cunt', 'dick', 'cock', 'pussy', 'dumbass',
-  'motherfucker', 'asshole', 'douche', 'twat', 'fucker',
-  'bullshit', 'bull crap', 'jackass', 'dipshit'
+  'bastard', 'cunt', 'dick', 'cock', 'pussy', 'motherfucker', 'asshole', 'douche', 'twat', 'fucker',
+  'bullshit', 'bull crap', 'jackass', 'dipshit', 'arse', 'bloody',
+  // Variants of core profanity
+  'fucking', 'fuckin', 'fucker', 'fuckface', 'fuckhead', 'fucks', 'fucked', 'motherfucking', 'motherfuckin',
+  'shithead', 'shitty', 'shite', 'shits', 'shitfaced',
+  'asshat', 'asswipe', 'assclown', 'asshats', 'asswipes', 'dumbasses', 'jackasses', 'dipshits',
+  'bitchy', 'bitchin', 'bitches', 'bitching',
+  'dickhead', 'dickwad', 'dickface', 'dicks',
+  'cocksucker', 'cockhead', 'cockface', 'cocks',
+  'pussies', 'pussycat', 'puss',
+  'cunts', 'cunting', 'twats', 'bastards', 'douches',
+  // Racial slurs and hate terms
+  'nigger', 'nigga', 'spic', 'gook', 'slope', 'towelhead', 'chink', 'jap', 'kike',
+  'wetback', 'yid', 'faggot', 'fags', 'homo', 'queer', 'pillow biter', 'fruit', 'cocksucker', 'sodomite',
+  // Serious crimes and exploitation
+  'rape', 'rapist', 'pedophile', 'child molester', 'kid fucker', 'pedophilia', 'incest', 'bestiality',
+  // Violence terms
+  'kill', 'murder', 'torture', 'slaughter'
 ];
 
 export interface FilterResult {

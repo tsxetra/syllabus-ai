@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { NextResponse } from "next/server"
+import { filterProfanity } from "@/lib/profanity-filter"
 
 export async function POST() {
   const apiKey = process.env.GEMINI_API_KEY
@@ -115,7 +116,17 @@ Generate just the greeting question, nothing else:`
     const response = await result.response
     const greeting = response.text().trim().replace(/['"]/g, "")
 
-    return NextResponse.json({ greeting })
+    // Filter AI-generated greeting for profanity
+    const filterResult = filterProfanity(greeting)
+    const finalGreeting = filterResult.isBlocked ? filterResult.filteredContent : greeting
+
+    return NextResponse.json({
+      greeting: finalGreeting,
+      ...(filterResult.isBlocked && {
+        filtered: true,
+        detectedWords: filterResult.detectedWords
+      })
+    })
   } catch (error) {
     console.error("Error generating greeting:", error)
     return NextResponse.json({ greeting: generateFallbackGreeting() })

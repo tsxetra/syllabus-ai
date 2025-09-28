@@ -3,6 +3,8 @@
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
 import { AlertTriangle } from "lucide-react"
 import { motion } from "framer-motion"
+import { Button } from "@/components/ui/button"
+import { X } from "lucide-react"
 
 interface ProfanityAlertProps {
   blockedWords: string[]
@@ -21,17 +23,17 @@ export function ProfanityAlert({ blockedWords, role, onDismiss, inline = false }
           ? "Your message contains inappropriate language. Please rephrase and try again."
           : "The AI response contained inappropriate content and has been filtered."
         }
-        <br />
-        Detected words: {blockedWords.join(", ")}
       </AlertDescription>
       {!inline && (
-        <button
+        <Button
           onClick={onDismiss}
-          className="absolute right-2 top-2 text-muted-foreground hover:text-foreground"
+          variant="ghost"
+          size="icon"
+          className="absolute right-2 top-2 h-6 w-6 text-muted-foreground hover:text-foreground"
           aria-label="Dismiss alert"
         >
-          ×
-        </button>
+          <X className="h-4 w-4" />
+        </Button>
       )}
     </Alert>
   )
