@@ -16,7 +16,7 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Plus, MessageSquare, Settings, Send, X, Trash2, Moon, Sun, Mic, Square, Volume2, VolumeX, Zap, EyeOff, AlertTriangle } from "lucide-react"
+import { Plus, MessageSquare, Settings, Send, X, Trash2, Moon, Sun, Mic, Square, Volume2, VolumeX, Zap, EyeOff, AlertTriangle, Menu } from "lucide-react"
 import { Slider } from "@/components/ui/slider"
 import { motion, AnimatePresence, useAnimation } from "framer-motion"
 
@@ -50,6 +50,7 @@ export default function SyllabusChat() {
   const [showErrorPopup, setShowErrorPopup] = useState(false)
   const [chatHistoryOpen, setChatHistoryOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [navOpen, setNavOpen] = useState(false)
 
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([])
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null)
@@ -642,13 +643,16 @@ export default function SyllabusChat() {
 
 
 
-      <motion.nav
-        initial={{ x: -64, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-        className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col py-4 flex-shrink-0"
-        aria-label="Main navigation"
-      >
+      <AnimatePresence>
+        {navOpen && (
+          <motion.nav
+            initial={{ x: -260, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: -260, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="fixed top-0 left-0 h-full w-64 bg-sidebar border-r border-sidebar-border flex flex-col py-4 z-50"
+            aria-label="Main navigation"
+          >
         {/* Logo */}
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
@@ -720,12 +724,12 @@ export default function SyllabusChat() {
             >
               <Button
                 variant="ghost"
-                className="w-full justify-start px-3 py-2 h-10 text-muted-foreground hover:text-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+                size="icon"
+                className="h-10 w-10 text-muted-foreground hover:text-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
                 onClick={onClick}
               >
-                <motion.div className="flex items-center gap-3" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <Icon className="w-5 h-5" />
-                  <span className="text-sm">{label}</span>
                 </motion.div>
               </Button>
             </motion.div>
@@ -734,53 +738,22 @@ export default function SyllabusChat() {
 
         <div className="flex-1"></div>
 
-        {/* Model Selector */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6, duration: 0.3 }}
-          className="px-3 mb-4"
-        >
-          <Select value={selectedModel} onValueChange={setSelectedModel}>
-            <SelectTrigger className="w-full bg-card border-0 focus:ring-2 focus:ring-ring">
-              <SelectValue placeholder="Select model" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="gpt-4">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                  GPT-4
-                </div>
-              </SelectItem>
-              <SelectItem value="gpt-3.5-turbo">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                  GPT-3.5
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </motion.div>
-
-        {/* User Avatar */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.7, duration: 0.4 }}
-          className="px-3 mb-2"
-        >
-          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
-            <Avatar className="w-8 h-8">
-              <AvatarImage src="/diverse-user-avatars.png" alt="User avatar" />
-              <AvatarFallback className="bg-slate-900 text-white">U</AvatarFallback>
-            </Avatar>
-          </motion.div>
-        </motion.div>
-      </motion.nav>
 
 
 
+          </motion.nav>
+        )}
+      </AnimatePresence>
 
+      {/* Hamburger Menu Button */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="fixed top-4 left-4 z-40 h-10 w-10 bg-background/80 backdrop-blur-sm"
+        onClick={() => setNavOpen(!navOpen)}
+      >
+        <Menu className="w-5 h-5" />
+      </Button>
 
       <main className="flex-1 flex flex-col min-w-0 h-full">
         <AnimatePresence mode="wait">
@@ -941,6 +914,13 @@ export default function SyllabusChat() {
                       <Plus className="w-4 h-4" />
                     </Button>
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                      <MicButton
+                        isRecording={isListening}
+                        isSupported={sttSupported}
+                        onPressStart={handleVoiceRecording}
+                        onPressEnd={handleVoiceStop}
+                        className="w-8 h-8"
+                      />
                       <Button
                         type="submit"
                         variant="ghost"
@@ -953,12 +933,9 @@ export default function SyllabusChat() {
                     </div>
                   </motion.div>
                   <div className="flex justify-center mt-2">
-                    <div className="w-full max-w-sm">
-                      <Progress value={(input.length / 25000) * 100} className="h-1" />
-                      <p className="text-xs text-muted-foreground mt-1 text-center">
-                        {input.length}/25000 characters
-                      </p>
-                    </div>
+                    <p className="text-xs text-muted-foreground text-center max-w-sm">
+                      AI can sometimes be incorrect. Please verify important information.
+                    </p>
                   </div>
                 </motion.form>
               </motion.div>
